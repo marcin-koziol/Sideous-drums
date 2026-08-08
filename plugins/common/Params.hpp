@@ -30,10 +30,12 @@ enum Params : uint32_t {
 
     kParamHatClosedDecay,
     kParamHatClosedTone,
+    kParamHatClosedMetal,
     kParamHatClosedLevel,
 
     kParamHatOpenDecay,
     kParamHatOpenTone,
+    kParamHatOpenMetal,
     kParamHatOpenLevel,
 
     kParamTomLowTune,
@@ -104,10 +106,12 @@ inline const ParamInfo& getParamInfo(uint32_t index) noexcept
 
         { "Hat Closed Decay", "hat_closed_decay",  "s",  0.02f,  0.3f,    0.08f,  ParamShape::Logarithmic },
         { "Hat Closed Tone",  "hat_closed_tone",   "",   0.0f,   1.0f,    0.55f,  ParamShape::Linear },
+        { "Hat Closed Metal", "hat_closed_metal",  "",   0.0f,   1.0f,    0.5f,   ParamShape::Linear },
         { "Hat Closed Level", "hat_closed_level",  "",   0.0f,   1.0f,    0.75f,  ParamShape::Linear },
 
         { "Hat Open Decay",   "hat_open_decay",    "s",  0.1f,   1.5f,    0.5f,   ParamShape::Logarithmic },
         { "Hat Open Tone",    "hat_open_tone",     "",   0.0f,   1.0f,    0.55f,  ParamShape::Linear },
+        { "Hat Open Metal",   "hat_open_metal",    "",   0.0f,   1.0f,    0.5f,   ParamShape::Linear },
         { "Hat Open Level",   "hat_open_level",    "",   0.0f,   1.0f,    0.75f,  ParamShape::Linear },
 
         { "Tom Low Tune",     "tom_low_tune",      "Hz", 60.0f,  200.0f,  90.0f,  ParamShape::Logarithmic },

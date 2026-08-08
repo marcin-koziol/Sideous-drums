@@ -1,0 +1,71 @@
+name: build
+
+# Builds both the sideous-drums (stereo) and sideous-drums-multi (13-bus)
+# VST3/LV2/CLAP plugins for Linux, Windows, and macOS in one pass — the root
+# CMakeLists.txt add_subdirectory()s both plugin targets, so a single CMake
+# build already produces every format for both variants.
+#
+# Uses distrho/dpf-cmake-action, DPF's own maintained build action (the same
+# one the DPF project uses for its own CI) instead of hand-rolling a mingw
+# cross-compile + Cairo toolchain here. It handles dependency setup, the
+# CMake configure/build, and uploading build artifacts. Mirrors the sideous
+# (synth) repo's own workflow — see that repo for the reasoning behind
+# pawpaw: true on every job (avoids apt/Homebrew Cairo conflicts across all
+# three platforms).
+#
+# First run per cache key is slow (builds Cairo from source); later runs
+# reuse the action's own dependency cache.
+#
+# Artifacts (VST3 + LV2 + CLAP bundles, both variants) are uploaded on every
+# push/PR run. Pushing a version tag (e.g. "v1.0.0") additionally creates a
+# GitHub Release with the built packages attached.
+
+on:
+  push:
+    branches: ['*']
+    tags: ['v*']
+  pull_request:
+    branches: ['*']
+
+env:
+  NAME: sideous-drums
+
+jobs:
+  linux:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - uses: distrho/dpf-cmake-action@v1
+        with:
+          target: linux-x86_64
+          dpf_path: dpf
+          pawpaw: true
+
+  windows:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - uses: distrho/dpf-cmake-action@v1
+        with:
+          target: win64
+          dpf_path: dpf
+          pawpaw: true
+
+  macos:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - uses: distrho/dpf-cmake-action@v1
+        with:
+          target: macos-universal
+          dpf_path: dpf
+          pawpaw: true

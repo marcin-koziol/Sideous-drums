@@ -10,3 +10,4 @@ endif()
 
 add_subdirectory(dpf)
 add_subdirectory(plugins/SideousDrums)
+add_subdirectory(plugins/SideousDrumsMulti)

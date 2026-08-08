@@ -4,6 +4,6 @@ dpf_add_plugin(sideous-drums
   FILES_DSP
       SideousDrumsPlugin.cpp
   FILES_UI
-      SideousDrumsUI.cpp)
+      ../common/SideousDrumsUI.cpp)
 
 target_include_directories(sideous-drums PUBLIC ".")
