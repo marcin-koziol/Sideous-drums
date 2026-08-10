@@ -40,6 +40,23 @@ crash=49, ride=51, rimshot=37, clap=39, maracas=70):
 - **Master** — Volume, plus a Drive/Mix saturation stage as a character/grit
   control, not just a safety limiter
 
+## Presets
+
+A small file-based preset library, entirely UI-side so it works identically
+across every host/format including the JACK standalone (which has no host
+preset browser of its own): `<` / `>` step through presets, click the name
+field to rename, `SAVE`/`DELETE` manage the library. Presets are plain-text
+`.sdpreset` files (one `symbol=value` line per parameter) in
+`~/.local/share/sideous-drums/presets` (Linux/XDG), `~/Library/Application
+Support/sideous-drums/presets` (macOS), or `%APPDATA%\sideous-drums\presets`
+(Windows).
+
+Ten factory presets (Classic 808, 909 Techno, Trap Snap, Dub Wobble Toms,
+Bright Pop Kit, Lo-Fi Chip, Metal Overload, Soft Brushes, Industrial Noise,
+Deep Sub Growl) are seeded into that folder the first time the UI runs with
+an empty library — from then on they're just ordinary presets, editable and
+deletable like anything you save yourself.
+
 ## Two builds
 
 - **Sideous Drums** — a single stereo output, the whole kit summed together.
