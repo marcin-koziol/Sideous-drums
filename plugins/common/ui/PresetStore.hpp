@@ -6,13 +6,20 @@
  * line per parameter, keyed by Params.hpp's stable symbol strings rather
  * than numeric index so presets survive future parameter reordering.
  *
- * This is deliberately independent of any host preset mechanism (VST3/CLAP
- * hosts already save/restore automatable parameters as part of their own
- * project state without any of this) - it exists so there's a *named,
- * browsable preset library* that works identically across every format,
- * including the JACK standalone, which has no host preset browser at all.
- * Shared verbatim by both the stereo and multi-out plugin builds (same UI
- * file, see plugins/common/SideousDrumsUI.cpp).
+ * Deliberately independent of any host preset mechanism, since VST3/CLAP
+ * already save automatable parameters as part of project state - this
+ * exists for a *named, browsable library* that works identically across
+ * every format, including the JACK standalone which has no host preset
+ * browser at all.
+ *
+ * Uses plain POSIX directory calls (mkdir/opendir/readdir), not
+ * std::filesystem: libc++'s std::filesystem symbols are annotated
+ * unavailable below a macOS 10.15 deployment target, and DPF/PawPaw's
+ * macOS-universal build targets older than that for host compatibility -
+ * std::filesystem here reliably broke the macOS CI build (confirmed the
+ * same failure across every sideous-* plugin that copied this file, fixed
+ * first in sideous-noise). POSIX mkdir/opendir/readdir/remove carry no such
+ * version gating.
  */
 
 #pragma once
@@ -22,10 +29,17 @@
 #include <algorithm>
 #include <cstdio>
 #include <cstdlib>
-#include <filesystem>
+#include <cstring>
 #include <fstream>
 #include <string>
 #include <vector>
+
+#include <dirent.h>
+#include <sys/stat.h>
+
+#if defined(_WIN32)
+#include <direct.h>
+#endif
 
 namespace sideous {
 namespace ui {
@@ -69,35 +83,63 @@ inline std::string sanitizePresetName(const std::string& raw)
     return out.substr(start, end - start + 1);
 }
 
+// mkdir, one path component at a time (POSIX mkdir() doesn't create missing
+// parents) - failures (e.g. a component already existing) are silently
+// ignored, same as the std::filesystem version this replaced.
+inline void createDirectories(const std::string& path)
+{
+    for (size_t pos = 0; pos < path.size(); )
+    {
+        size_t next = path.find_first_of("/\\", pos);
+        if (next == std::string::npos)
+            next = path.size();
+        const std::string partial = path.substr(0, next);
+        if (!partial.empty())
+        {
+#if defined(_WIN32)
+            _mkdir(partial.c_str());
+#else
+            mkdir(partial.c_str(), 0755);
+#endif
+        }
+        pos = next + 1;
+    }
+}
+
+inline bool hasSuffix(const std::string& s, const std::string& suffix) noexcept
+{
+    return s.size() >= suffix.size() &&
+           s.compare(s.size() - suffix.size(), suffix.size(), suffix) == 0;
+}
+
 // sorted (alphabetical) list of preset display names - the ".sdpreset"
 // extension is stripped, and is also what savePreset()/loadPreset()/
 // deletePreset() expect as their `name` argument.
 inline std::vector<std::string> listPresets()
 {
     std::vector<std::string> names;
-    std::error_code ec;
-    const std::filesystem::path dir(presetsDirectory());
-    if (!std::filesystem::exists(dir, ec) || ec)
+    DIR* dir = opendir(presetsDirectory().c_str());
+    if (dir == nullptr)
         return names;
 
-    for (const auto& entry : std::filesystem::directory_iterator(dir, ec))
+    static constexpr const char* kExt = ".sdpreset";
+    while (dirent* entry = readdir(dir))
     {
-        if (ec)
-            break;
-        if (entry.path().extension() == ".sdpreset")
-            names.push_back(entry.path().stem().string());
+        const std::string name = entry->d_name;
+        if (hasSuffix(name, kExt))
+            names.push_back(name.substr(0, name.size() - std::strlen(kExt)));
     }
+    closedir(dir);
+
     std::sort(names.begin(), names.end());
     return names;
 }
 
 inline bool savePreset(const std::string& name, const float* values)
 {
-    std::error_code ec;
-    const std::filesystem::path dir(presetsDirectory());
-    std::filesystem::create_directories(dir, ec);
+    createDirectories(presetsDirectory());
 
-    std::ofstream out(dir / (name + ".sdpreset"));
+    std::ofstream out(presetsDirectory() + "/" + name + ".sdpreset");
     if (!out.is_open())
         return false;
 
@@ -117,8 +159,7 @@ inline bool savePreset(const std::string& name, const float* values)
 // so loading never needs to know which plugin version wrote the file.
 inline bool loadPreset(const std::string& name, float* values)
 {
-    const std::filesystem::path file = std::filesystem::path(presetsDirectory()) / (name + ".sdpreset");
-    std::ifstream in(file);
+    std::ifstream in(presetsDirectory() + "/" + name + ".sdpreset");
     if (!in.is_open())
         return false;
 
@@ -147,9 +188,7 @@ inline bool loadPreset(const std::string& name, float* values)
 
 inline bool deletePreset(const std::string& name)
 {
-    std::error_code ec;
-    const std::filesystem::path file = std::filesystem::path(presetsDirectory()) / (name + ".sdpreset");
-    return std::filesystem::remove(file, ec);
+    return std::remove((presetsDirectory() + "/" + name + ".sdpreset").c_str()) == 0;
 }
 
 } // namespace ui
