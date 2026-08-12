@@ -44,6 +44,9 @@ public:
 
     void setTune(float hz) noexcept { fTuneHz = hz; }
 
+    // see CymbalVoice::setNoiseSeed - every Noise defaults to the same seed
+    void setNoiseSeed(uint32_t seed) noexcept { fNoise.setSeed(seed); }
+
     void trigger(float velocity) noexcept
     {
         fVelocity = velocity;

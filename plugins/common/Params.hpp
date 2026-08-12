@@ -86,6 +86,12 @@ enum Params : uint32_t {
     // own rattling texture
     kParamMaracasRattle,
 
+    // Clap had only Decay/Level - Tone sweeps the shared bandpass center (was a fixed
+    // 1200Hz), Hands sets how many retriggered pulses make up one hit (was a fixed 3
+    // flams + 1 body) - see ClapVoice's class comment
+    kParamClapTone,
+    kParamClapHands,
+
     // output params (host/UI meters only, never automatable): current envelope level
     // (0..1) per voice, index-aligned with DrumVoiceIndex in DrumMap.hpp, used to light
     // up the per-column "LED" in the UI while a voice is playing
@@ -187,6 +193,9 @@ inline const ParamInfo& getParamInfo(uint32_t index) noexcept
         { "Ride Metal",      "ride_metal",          "",   0.0f,   1.0f,  0.85f, ParamShape::Linear },
         { "Ride Bell",       "ride_bell",           "",   0.0f,   1.0f,  0.45f, ParamShape::Linear },
         { "Maracas Rattle",  "maracas_rattle",      "",   0.0f,   1.0f,  0.55f, ParamShape::Linear },
+
+        { "Clap Tone",       "clap_tone",           "Hz", 500.0f, 3000.0f, 1200.0f, ParamShape::Logarithmic },
+        { "Clap Hands",      "clap_hands",          "x",  1.0f,   7.0f,    4.0f,    ParamShape::Linear },
 
         { "Kick Active",       "kick_active",       "", 0.0f, 1.0f, 0.0f, ParamShape::Linear },
         { "Snare Active",      "snare_active",      "", 0.0f, 1.0f, 0.0f, ParamShape::Linear },

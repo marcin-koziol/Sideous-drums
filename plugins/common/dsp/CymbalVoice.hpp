@@ -89,6 +89,12 @@ public:
             fPartials[i] = partials[i];
     }
 
+    // every Noise instance defaults to the same seed (see Noise.hpp) - give
+    // each voice a distinct one, or their noise layers are literally
+    // identical sample-for-sample and audibly comb-filter/cancel when they
+    // play together (see DrumEngine's constructor)
+    void setNoiseSeed(uint32_t seed) noexcept { fNoise.setSeed(seed); }
+
     // Tone knob (0..1) sweeps the highpass cutoff between these two Hz bounds
     void setToneRange(float minHz, float maxHz) noexcept { fToneMinHz = minHz; fToneMaxHz = maxHz; }
     void setTone(float tone01) noexcept { fTone = std::clamp(tone01, 0.0f, 1.0f); }

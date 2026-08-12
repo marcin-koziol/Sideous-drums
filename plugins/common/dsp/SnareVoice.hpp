@@ -50,6 +50,9 @@ public:
     void setSnap(float seconds) noexcept { fNoiseEnv.setDecay(seconds); }
     void setBright(float hz) noexcept { fBrightHz = hz; }
 
+    // see CymbalVoice::setNoiseSeed - every Noise defaults to the same seed
+    void setNoiseSeed(uint32_t seed) noexcept { fNoise.setSeed(seed); }
+
     void trigger(float velocity) noexcept
     {
         fVelocity = velocity;

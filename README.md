@@ -44,8 +44,11 @@ crash=49, ride=51, rimshot=37, clap=39, maracas=70):
 - **Toms** (low/mid/high) — same engine as the kick, different pitch ranges,
   with a fixed (non-exposed) pitch envelope baked in for character
 - **Rimshot** — short sine tock + short filtered noise tick, both fixed-decay
-- **Clap** — three fast retriggered noise bursts ("flams") + one longer body
-  pulse, the classic 808/909 handclap trick
+- **Clap** — retriggered noise bursts ("flams") through a bandpass into one
+  longer body pulse, the classic 808/909 handclap trick. Tone sweeps the
+  bandpass center; Hands (1-7) sets how many pulses make up one hit — 1 is a
+  single clean hit with no flam at all, higher counts spread it into more of
+  a "crowd" clap (was a fixed 3 flams + 1 body, no user control at all)
 - **Maracas** — a cluster of fast retriggered noise grains (the same
   flam-retrigger trick as Clap, just faster/denser) through a resonant
   bandpass instead of a plain highpass; Rattle (0..1) sets how many grains

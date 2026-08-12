@@ -90,6 +90,22 @@ public:
         static constexpr float kRidePartials[6] = { 400.0f, 410.0f, 802.0f, 1198.0f, 1585.0f, 2003.0f };
         fRide.setPartials(kRidePartials);
 
+        // every Noise instance defaults to the same seed (see Noise.hpp), and every
+        // voice's process() runs every sample regardless of trigger state - so left
+        // unseeded, every noise-based voice produces literally the same sample-for-
+        // sample signal forever, just through different filters. Two voices playing
+        // together (e.g. clap + hi-hat) then sound correlated/phasey instead of like
+        // two independent noise sources, since they effectively are the same source.
+        // Distinct seeds decorrelate them.
+        fSnare.setNoiseSeed(0x2545F491u);
+        fHatClosed.setNoiseSeed(0x9E3779B1u);
+        fHatOpen.setNoiseSeed(0x85EBCA6Bu);
+        fCrash.setNoiseSeed(0xC2B2AE35u);
+        fRide.setNoiseSeed(0x27D4EB2Fu);
+        fRim.setNoiseSeed(0x165667B1u);
+        fClap.setNoiseSeed(0xD3A2646Cu);
+        fMaracas.setNoiseSeed(0xFD7046C5u);
+
         for (uint32_t i = 0; i < kParamCount; ++i)
             setParameterValue(i, getParamInfo(i).def);
     }
@@ -197,6 +213,8 @@ public:
 
         case kParamClapDecay:       fClap.setDecay(value); break;
         case kParamClapLevel:       fClapLevel = value; break;
+        case kParamClapTone:        fClap.setTone(value); break;
+        case kParamClapHands:       fClap.setHands(value); break;
 
         case kParamMaracasDecay:    fMaracas.setDecay(value); break;
         case kParamMaracasLevel:    fMaracasLevel = value; break;

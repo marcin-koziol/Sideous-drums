@@ -4,10 +4,17 @@
  * simulates the natural spread of real hands clapping together. All pulses
  * share one noise source and bandpass filter - they're just a scheduled
  * sequence of amplitude-envelope retriggers, not separate voices.
+ *
+ * Hands (1..kMaxHands) sets how many pulses fire per hit: the last one is
+ * always the longer "body" pulse, everything before it is a short flam -
+ * so Hands=1 is a single clean hit with no flam at all, higher counts spread
+ * it out into more of a "crowd" clap. Tone sweeps the shared bandpass
+ * center frequency.
  */
 
 #pragma once
 
+#include <algorithm>
 #include <cstdint>
 
 #include "Noise.hpp"
@@ -22,9 +29,8 @@ public:
     static constexpr float kAttackSeconds = 0.0005f;
     static constexpr float kFlamDecaySeconds = 0.012f;
     static constexpr float kFlamSpacingSeconds = 0.014f;
-    static constexpr uint32_t kFlamCount = 3; // short pulses before the longer body pulse
-    static constexpr float kCutoffHz = 1200.0f;
     static constexpr float kResonance = 0.25f;
+    static constexpr uint32_t kMaxHands = 7;
 
     void setSampleRate(double sampleRate) noexcept
     {
@@ -41,21 +47,32 @@ public:
     }
 
     void setDecay(float seconds) noexcept { fBodyDecay = seconds; }
+    void setTone(float hz) noexcept { fCutoffHz = hz; }
+
+    // 1 = a single clean hit (no flam), up to kMaxHands = a full "crowd" clap
+    void setHands(float hands) noexcept
+    {
+        fHandCount = (uint32_t)std::lround(std::clamp(hands, 1.0f, (float)kMaxHands));
+    }
+
+    // see CymbalVoice::setNoiseSeed - every Noise defaults to the same seed
+    void setNoiseSeed(uint32_t seed) noexcept { fNoise.setSeed(seed); }
 
     void trigger(float velocity) noexcept
     {
         fVelocity = velocity;
         fStep = 0;
-        fCountdown = 0; // fires the first flam on the very next process() call
+        fCountdown = 0; // fires the first pulse on the very next process() call
     }
 
     float process() noexcept
     {
-        if (fStep <= kFlamCount)
+        if (fStep < fHandCount)
         {
             if (fCountdown == 0)
             {
-                fEnv.setDecay(fStep < kFlamCount ? kFlamDecaySeconds : fBodyDecay);
+                const bool isBody = fStep == fHandCount - 1;
+                fEnv.setDecay(isBody ? fBodyDecay : kFlamDecaySeconds);
                 fEnv.noteOn();
                 fCountdown = fSpacingSamples;
                 ++fStep;
@@ -66,7 +83,7 @@ public:
             }
         }
 
-        const float filtered = fFilter.process(fNoise.process(), kCutoffHz);
+        const float filtered = fFilter.process(fNoise.process(), fCutoffHz);
         return filtered * fEnv.process() * fVelocity;
     }
 
@@ -82,9 +99,11 @@ private:
     ADSR fEnv;
 
     float fBodyDecay = 0.15f;
+    float fCutoffHz = 1200.0f;
     float fVelocity = 1.0f;
 
-    uint32_t fStep = kFlamCount + 1; // idle until first trigger()
+    uint32_t fHandCount = 4; // 3 flams + 1 body, matches the old fixed kFlamCount=3
+    uint32_t fStep = kMaxHands; // idle until first trigger()
     uint32_t fCountdown = 0;
 };
 

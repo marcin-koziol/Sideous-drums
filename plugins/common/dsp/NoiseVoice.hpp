@@ -51,6 +51,9 @@ public:
         fGrainCount = 1 + (uint32_t)std::lround(r * (float)(kMaxGrains - 1));
     }
 
+    // see CymbalVoice::setNoiseSeed - every Noise defaults to the same seed
+    void setNoiseSeed(uint32_t seed) noexcept { fNoise.setSeed(seed); }
+
     void trigger(float velocity) noexcept
     {
         fVelocity = velocity;

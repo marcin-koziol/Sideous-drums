@@ -231,7 +231,8 @@ inline Layout buildLayout(float width, float height)
           { { kParamRimTune, "TUNE" }, { kParamRimLevel, "LEVEL" } },
           kParamRimActive },
         { "CLAP", kDrumMidiNotes[kVoiceClap], kClapAccent,
-          { { kParamClapDecay, "DECAY" }, { kParamClapLevel, "LEVEL" } },
+          { { kParamClapDecay, "DECAY" }, { kParamClapTone, "TONE" },
+            { kParamClapHands, "HANDS" }, { kParamClapLevel, "LEVEL" } },
           kParamClapActive },
         { "MARACAS", kDrumMidiNotes[kVoiceMaracas], kMaracasAccent,
           { { kParamMaracasDecay, "DECAY" }, { kParamMaracasRattle, "RATTLE" }, { kParamMaracasLevel, "LEVEL" } },
@@ -338,6 +339,10 @@ inline void formatParamValue(uint32_t index, float value, char* out, size_t outS
     else if (std::strcmp(info.unit, "st") == 0)
     {
         std::snprintf(out, outSize, "%.0fst", value);
+    }
+    else if (std::strcmp(info.unit, "x") == 0)
+    {
+        std::snprintf(out, outSize, "%.0fx", value);
     }
     else
     {
