@@ -53,6 +53,17 @@ protected:
         if (index >= kParamCount)
             return;
 
+        // output-only "voice active" meters (per-voice LEDs): just store the
+        // level and repaint - no value callout, and must never mark the
+        // preset dirty (that's for user-editable params only, and a voice
+        // firing has nothing to do with whether the preset itself changed)
+        if (index >= kParamFirstActive)
+        {
+            fValues[index] = value;
+            repaint();
+            return;
+        }
+
         // briefly show a value callout on the knob whenever its value
         // actually changes - covers host automation as well as our own
         // drag/scroll/click edits (which already show it via dragging, so
@@ -115,6 +126,9 @@ protected:
         state.hoverPresetButton = fHoverPresetButton;
         state.presetDeleteEnabled = fPresetIndex >= 0;
 
+        state.hoverPanel = fHoverPanel;
+        state.pressPanel = fPressPanel;
+
         ui::paint(context.handle, fLayout, state);
     }
 
@@ -164,6 +178,17 @@ protected:
                 repaint();
             }
 
+            const int panelIdx = hitTestPanelTrigger(mx, my);
+            if (panelIdx >= 0)
+            {
+               #if DISTRHO_PLUGIN_WANT_MIDI_INPUT
+                fPressPanel = panelIdx;
+                sendNote(0, (uint8_t)fLayout.panels[panelIdx].midiNote, 127);
+                repaint();
+               #endif
+                return true;
+            }
+
             const int knobIdx = hitTestKnob(mx, my);
             if (knobIdx < 0)
                 return false;
@@ -203,6 +228,16 @@ protected:
             return true;
         }
 
+        if (fPressPanel >= 0)
+        {
+           #if DISTRHO_PLUGIN_WANT_MIDI_INPUT
+            sendNote(0, (uint8_t)fLayout.panels[fPressPanel].midiNote, 0);
+           #endif
+            fPressPanel = -1;
+            repaint();
+            return true;
+        }
+
         return false;
     }
 
@@ -228,11 +263,13 @@ protected:
 
         const int newHoverKnob = hitTestKnob(mx, my);
         const int newHoverPresetButton = hitTestPresetButton(mx, my);
+        const int newHoverPanel = hitTestPanelTrigger(mx, my);
 
-        if (newHoverKnob != fHoverKnob || newHoverPresetButton != fHoverPresetButton)
+        if (newHoverKnob != fHoverKnob || newHoverPresetButton != fHoverPresetButton || newHoverPanel != fHoverPanel)
         {
             fHoverKnob = newHoverKnob;
             fHoverPresetButton = newHoverPresetButton;
+            fHoverPanel = newHoverPanel;
             repaint();
         }
 
@@ -325,6 +362,21 @@ private:
     static bool insideButton(const ui::Button& b, double x, double y) noexcept
     {
         return x >= b.x && x <= b.x + b.w && y >= b.y && y <= b.y + b.h;
+    }
+
+    // hit-tests each panel's trigger-pad header strip (see ui::kPanelHeaderH);
+    // panels without a MIDI note (Master) aren't triggerable
+    int hitTestPanelTrigger(double x, double y) const noexcept
+    {
+        for (size_t i = 0; i < fLayout.panels.size(); ++i)
+        {
+            const ui::PanelBox& p = fLayout.panels[i];
+            if (p.midiNote < 0)
+                continue;
+            if (x >= p.x && x <= p.x + p.w && y >= p.y && y <= p.y + ui::kPanelHeaderH)
+                return (int)i;
+        }
+        return -1;
     }
 
     // 0=prev, 1=next, 2=save, 3=delete, or -1. Delete only hit-tests
@@ -435,6 +487,9 @@ private:
     float fDragStartT = 0.0f;
 
     int fHoverKnob = -1;
+
+    int fHoverPanel = -1;
+    int fPressPanel = -1;
 
     int fLastClickKnob = -1;
     std::chrono::steady_clock::time_point fLastClickTime{};

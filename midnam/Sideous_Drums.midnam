@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE MIDINameDocument PUBLIC "-//MIDI Manufacturers Association//DTD MIDINameDocument 1.0//EN" "http://www.midi.org/dtds/MIDINameDocument10.dtd">
+<!--
+  Static MIDNAM file for Sideous Drums / Sideous Drums Multi.
+
+  The LV2 build of these plugins already reports these same note names to Ardour
+  automatically (via Ardour's LV2 MIDNAM extension), so you shouldn't need this file
+  there - it exists for the VST3/CLAP builds, or any other host/track that wants a
+  MIDNAM assigned manually instead of relying on plugin-reported data.
+
+  Install: copy this file into Ardour's MIDI Name Document search path (varies by
+  platform/version - typically ~/.config/ardourX/midi_patches/ or a "midi_patches"
+  folder next to Ardour's user config dir; see the Ardour manual's "Files and
+  Directories" page). Then, on a MIDI track, right-click the piano-roll/scroomer
+  header and pick this device's "Sideous Drums" or "Sideous Drums Multi" model from
+  the MIDNAM selector.
+-->
+<MIDINameDocument>
+  <Author/>
+  <MasterDeviceNames>
+    <Manufacturer>Sideous</Manufacturer>
+    <Model>Sideous Drums</Model>
+    <Model>Sideous Drums Multi</Model>
+    <CustomDeviceMode Name="Default">
+      <ChannelNameSetAssignments>
+        <ChannelNameSetAssign Channel="1" NameSet="Notes"/>
+        <ChannelNameSetAssign Channel="2" NameSet="Notes"/>
+        <ChannelNameSetAssign Channel="3" NameSet="Notes"/>
+        <ChannelNameSetAssign Channel="4" NameSet="Notes"/>
+        <ChannelNameSetAssign Channel="5" NameSet="Notes"/>
+        <ChannelNameSetAssign Channel="6" NameSet="Notes"/>
+        <ChannelNameSetAssign Channel="7" NameSet="Notes"/>
+        <ChannelNameSetAssign Channel="8" NameSet="Notes"/>
+        <ChannelNameSetAssign Channel="9" NameSet="Notes"/>
+        <ChannelNameSetAssign Channel="10" NameSet="Notes"/>
+        <ChannelNameSetAssign Channel="11" NameSet="Notes"/>
+        <ChannelNameSetAssign Channel="12" NameSet="Notes"/>
+        <ChannelNameSetAssign Channel="13" NameSet="Notes"/>
+        <ChannelNameSetAssign Channel="14" NameSet="Notes"/>
+        <ChannelNameSetAssign Channel="15" NameSet="Notes"/>
+        <ChannelNameSetAssign Channel="16" NameSet="Notes"/>
+      </ChannelNameSetAssignments>
+    </CustomDeviceMode>
+    <ChannelNameSet Name="Notes">
+      <AvailableForChannels>
+        <AvailableChannel Channel="1" Available="true"/>
+        <AvailableChannel Channel="2" Available="true"/>
+        <AvailableChannel Channel="3" Available="true"/>
+        <AvailableChannel Channel="4" Available="true"/>
+        <AvailableChannel Channel="5" Available="true"/>
+        <AvailableChannel Channel="6" Available="true"/>
+        <AvailableChannel Channel="7" Available="true"/>
+        <AvailableChannel Channel="8" Available="true"/>
+        <AvailableChannel Channel="9" Available="true"/>
+        <AvailableChannel Channel="10" Available="true"/>
+        <AvailableChannel Channel="11" Available="true"/>
+        <AvailableChannel Channel="12" Available="true"/>
+        <AvailableChannel Channel="13" Available="true"/>
+        <AvailableChannel Channel="14" Available="true"/>
+        <AvailableChannel Channel="15" Available="true"/>
+        <AvailableChannel Channel="16" Available="true"/>
+      </AvailableForChannels>
+      <UsesNoteNameList Name="Notes"/>
+    </ChannelNameSet>
+    <NoteNameList Name="Notes">
+      <Note Number="36" Name="Kick"/>
+      <Note Number="37" Name="Rimshot"/>
+      <Note Number="38" Name="Snare"/>
+      <Note Number="39" Name="Clap"/>
+      <Note Number="41" Name="Tom Low"/>
+      <Note Number="42" Name="Hat Closed"/>
+      <Note Number="45" Name="Tom Mid"/>
+      <Note Number="46" Name="Hat Open"/>
+      <Note Number="48" Name="Tom High"/>
+      <Note Number="49" Name="Crash"/>
+      <Note Number="51" Name="Ride"/>
+      <Note Number="70" Name="Maracas"/>
+    </NoteNameList>
+  </MasterDeviceNames>
+</MIDINameDocument>

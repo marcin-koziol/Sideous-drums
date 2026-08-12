@@ -58,6 +58,19 @@ protected:
     const char* getLicense() const override { return "ISC"; }
     uint32_t getVersion() const override { return d_version(0, 1, 0); }
 
+    bool getMidiNoteName(const uint8_t note, String& name) override
+    {
+        for (int i = 0; i < kVoiceCount; ++i)
+        {
+            if (kDrumMidiNotes[i] == note)
+            {
+                name = kDrumVoiceNames[i];
+                return true;
+            }
+        }
+        return false;
+    }
+
     // ---------------------------------------------------------------------
     // Init
 
@@ -65,7 +78,6 @@ protected:
     {
         const ParamInfo& info = getParamInfo(index);
 
-        parameter.hints = kParameterIsAutomatable;
         parameter.name = info.name;
         parameter.symbol = info.symbol;
         parameter.unit = info.unit;
@@ -73,6 +85,13 @@ protected:
         parameter.ranges.max = info.max;
         parameter.ranges.def = info.def;
 
+        if (index >= kParamFirstActive)
+        {
+            parameter.hints = kParameterIsOutput;
+            return;
+        }
+
+        parameter.hints = kParameterIsAutomatable;
         if (info.shape == ParamShape::Logarithmic)
             parameter.hints |= kParameterIsLogarithmic;
     }

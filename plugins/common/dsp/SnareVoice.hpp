@@ -71,6 +71,14 @@ public:
         return (fToneMix * tone + (1.0f - fToneMix) * noise) * fVelocity;
     }
 
+    // current envelope level (0..1), for UI activity indicators - the louder of the two layers
+    float getLevel() const noexcept
+    {
+        const float tone = fToneEnv.getLevel();
+        const float noise = fNoiseEnv.getLevel();
+        return tone > noise ? tone : noise;
+    }
+
 private:
     SineOscillator fOsc;
     PitchEnvelope fPitchEnv;

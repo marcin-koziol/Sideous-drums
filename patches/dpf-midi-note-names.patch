@@ -1,0 +1,437 @@
+diff --git a/distrho/DistrhoPlugin.hpp b/distrho/DistrhoPlugin.hpp
+index 8570f9e9..7f6b2852 100644
+--- a/distrho/DistrhoPlugin.hpp
++++ b/distrho/DistrhoPlugin.hpp
+@@ -293,6 +293,15 @@ protected:
+     */
+     virtual void initPortGroup(uint32_t groupId, PortGroup& portGroup);
+ 
++   /**
++      Get the name of MIDI note @a note (0-127), for hosts that can display note/instrument
++      names (e.g. Ardour's MIDNAM support for LV2, or the VST3 program pitch-names interface).@n
++      Mainly useful for drum/percussion plugins with a fixed note-to-sound mapping.@n
++      Return true and set @a name if this plugin gives @a note a fixed meaning, false otherwise.@n
++      The default implementation exposes no note names.
++    */
++    virtual bool getMidiNoteName(uint8_t note, String& name);
++
+ #if DISTRHO_PLUGIN_WANT_PROGRAMS
+    /**
+       Set the name of the program @a index.@n
+diff --git a/distrho/src/DistrhoPlugin.cpp b/distrho/src/DistrhoPlugin.cpp
+index e2ffadb2..932ee562 100644
+--- a/distrho/src/DistrhoPlugin.cpp
++++ b/distrho/src/DistrhoPlugin.cpp
+@@ -185,6 +185,8 @@ void Plugin::initPortGroup(const uint32_t groupId, PortGroup& portGroup)
+     fillInPredefinedPortGroupData(groupId, portGroup);
+ }
+ 
++bool Plugin::getMidiNoteName(uint8_t, String&) { return false; }
++
+ #if DISTRHO_PLUGIN_WANT_PROGRAMS
+ void Plugin::initProgramName(uint32_t, String&) {}
+ #endif
+diff --git a/distrho/src/DistrhoPluginInternal.hpp b/distrho/src/DistrhoPluginInternal.hpp
+index d0bef80a..d695d159 100644
+--- a/distrho/src/DistrhoPluginInternal.hpp
++++ b/distrho/src/DistrhoPluginInternal.hpp
+@@ -826,6 +826,13 @@ public:
+         return getPortGroupById(groupId).symbol;
+     }
+ 
++    bool getMidiNoteName(const uint8_t note, String& name) const
++    {
++        DISTRHO_SAFE_ASSERT_RETURN(fPlugin != nullptr, false);
++
++        return fPlugin->getMidiNoteName(note, name);
++    }
++
+ #if DISTRHO_PLUGIN_WANT_PROGRAMS
+     uint32_t getProgramCount() const noexcept
+     {
+diff --git a/distrho/src/DistrhoPluginLV2.cpp b/distrho/src/DistrhoPluginLV2.cpp
+index d2791951..d16def55 100644
+--- a/distrho/src/DistrhoPluginLV2.cpp
++++ b/distrho/src/DistrhoPluginLV2.cpp
+@@ -1175,6 +1175,79 @@ public:
+ 
+     // -------------------------------------------------------------------
+ 
++   #if DISTRHO_PLUGIN_WANT_MIDI_INPUT
++    // Ardour-specific MIDNAM extension (see LV2_MIDNAM__interface below): builds a MIDI Name
++    // Document exposing Plugin::getMidiNoteName() so hosts can show note names instead of
++    // numbers on the piano roll, mainly useful for drum/percussion plugins.
++    char* lv2_midnam_document() const
++    {
++        String xml;
++        xml += "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n";
++        xml += "<!DOCTYPE MIDINameDocument PUBLIC \"-//MIDI Manufacturers Association//DTD MIDINameDocument 1.0//EN\" "
++               "\"http://www.midi.org/dtds/MIDINameDocument10.dtd\">\n";
++        xml += "<MIDINameDocument>\n";
++        xml += "  <Author/>\n";
++        xml += "  <MasterDeviceNames>\n";
++        xml += "    <Manufacturer>" DISTRHO_PLUGIN_BRAND "</Manufacturer>\n";
++        xml += "    <Model>" DISTRHO_PLUGIN_NAME "</Model>\n";
++        xml += "    <CustomDeviceMode Name=\"Default\">\n";
++        xml += "      <ChannelNameSetAssignments>\n";
++        for (int c = 1; c <= 16; ++c)
++            xml += "        <ChannelNameSetAssign Channel=\"" + String(c) + "\" NameSet=\"Notes\"/>\n";
++        xml += "      </ChannelNameSetAssignments>\n";
++        xml += "    </CustomDeviceMode>\n";
++        xml += "    <ChannelNameSet Name=\"Notes\">\n";
++        xml += "      <AvailableForChannels>\n";
++        for (int c = 1; c <= 16; ++c)
++            xml += "        <AvailableChannel Channel=\"" + String(c) + "\" Available=\"true\"/>\n";
++        xml += "      </AvailableForChannels>\n";
++        xml += "      <UsesNoteNameList Name=\"Notes\"/>\n";
++        xml += "    </ChannelNameSet>\n";
++        xml += "    <NoteNameList Name=\"Notes\">\n";
++
++        String name;
++        for (int note = 0; note < 128; ++note)
++        {
++            name = "";
++            if (fPlugin.getMidiNoteName(static_cast<uint8_t>(note), name) && name.length() > 0)
++                xml += "      <Note Number=\"" + String(note) + "\" Name=\"" + lv2_midnam_xml_escape(name) + "\"/>\n";
++        }
++
++        xml += "    </NoteNameList>\n";
++        xml += "  </MasterDeviceNames>\n";
++        xml += "</MIDINameDocument>\n";
++
++        return strdup(xml.buffer());
++    }
++
++    char* lv2_midnam_model() const
++    {
++        char buf[128];
++        std::snprintf(buf, sizeof(buf), "%s:%p", DISTRHO_PLUGIN_NAME, (const void*)this);
++        buf[sizeof(buf)-1] = '\0';
++        return strdup(buf);
++    }
++
++    static String lv2_midnam_xml_escape(const String& s)
++    {
++        String out;
++        for (const char* c = s.buffer(); *c != '\0'; ++c)
++        {
++            switch (*c)
++            {
++            case '&':  out += "&amp;";  break;
++            case '<':  out += "&lt;";   break;
++            case '>':  out += "&gt;";   break;
++            case '"':  out += "&quot;"; break;
++            default:   out += String(*c); break;
++            }
++        }
++        return out;
++    }
++   #endif
++
++    // -------------------------------------------------------------------
++
+ private:
+     PluginExporter fPlugin;
+     const bool fUsingNominal; // if false use maxBlockLength
+@@ -1642,6 +1715,39 @@ static void* lv2_get_instance_pointer(LV2_Handle instance)
+ 
+ // -----------------------------------------------------------------------
+ 
++#if DISTRHO_PLUGIN_WANT_MIDI_INPUT
++// Ardour-specific MIDNAM extension (not a formal LV2 spec; this is the mechanism Ardour uses
++// to read per-instrument MIDI note names for the piano roll). URIs and struct layout mirror
++// ardour/lv2_extensions.h exactly. Content here never changes at runtime, so the optional
++// host-provided "update" notify feature (LV2_MIDNAM__update) is not needed.
++
++#define DPF_LV2_MIDNAM_URI "http://ardour.org/lv2/midnam"
++#define DPF_LV2_MIDNAM__interface DPF_LV2_MIDNAM_URI "#interface"
++
++struct LV2_Midnam_Interface {
++    char* (*midnam)(LV2_Handle instance);
++    char* (*model)(LV2_Handle instance);
++    void (*free)(char*);
++};
++
++static char* lv2_midnam_get_document(LV2_Handle instance)
++{
++    return instancePtr->lv2_midnam_document();
++}
++
++static char* lv2_midnam_get_model(LV2_Handle instance)
++{
++    return instancePtr->lv2_midnam_model();
++}
++
++static void lv2_midnam_free(char* const value)
++{
++    std::free(value);
++}
++#endif // DISTRHO_PLUGIN_WANT_MIDI_INPUT
++
++// -----------------------------------------------------------------------
++
+ static const void* lv2_extension_data(const char* uri)
+ {
+     static const LV2_Options_Interface options = { lv2_get_options, lv2_set_options };
+@@ -1649,6 +1755,13 @@ static const void* lv2_extension_data(const char* uri)
+     if (std::strcmp(uri, LV2_OPTIONS__interface) == 0)
+         return &options;
+ 
++#if DISTRHO_PLUGIN_WANT_MIDI_INPUT
++    static const LV2_Midnam_Interface midnam = { lv2_midnam_get_document, lv2_midnam_get_model, lv2_midnam_free };
++
++    if (std::strcmp(uri, DPF_LV2_MIDNAM__interface) == 0)
++        return &midnam;
++#endif
++
+ #if DISTRHO_PLUGIN_WANT_PROGRAMS
+     static const LV2_Programs_Interface programs = { lv2_get_program, lv2_select_program };
+ 
+diff --git a/distrho/src/DistrhoPluginLV2export.cpp b/distrho/src/DistrhoPluginLV2export.cpp
+index dd5cc92a..c989e428 100644
+--- a/distrho/src/DistrhoPluginLV2export.cpp
++++ b/distrho/src/DistrhoPluginLV2export.cpp
+@@ -106,6 +106,11 @@ static constexpr const char* const lv2ManifestPluginExtensionData[] = {
+    #if DISTRHO_PLUGIN_WANT_PROGRAMS
+     LV2_PROGRAMS__Interface,
+    #endif
++   #if DISTRHO_PLUGIN_WANT_MIDI_INPUT
++    // Ardour-specific extension, lets it read per-note MIDI names for the piano roll.
++    // See DistrhoPluginLV2.cpp for the matching runtime implementation.
++    "http://ardour.org/lv2/midnam#interface",
++   #endif
+    #ifdef DISTRHO_PLUGIN_LICENSED_FOR_MOD
+     MOD_LICENSE__interface,
+    #endif
+diff --git a/distrho/src/DistrhoPluginVST3.cpp b/distrho/src/DistrhoPluginVST3.cpp
+index 7295c892..3b941774 100644
+--- a/distrho/src/DistrhoPluginVST3.cpp
++++ b/distrho/src/DistrhoPluginVST3.cpp
+@@ -53,6 +53,7 @@
+ #include "travesty/edit_controller.h"
+ #include "travesty/factory.h"
+ #include "travesty/host.h"
++#include "travesty/unit.h"
+ 
+ #include <map>
+ #include <string>
+@@ -763,6 +764,11 @@ public:
+         return fPlugin.getInstancePointer();
+     }
+ 
++    bool getMidiNoteName(const uint8_t note, String& name) const
++    {
++        return fPlugin.getMidiNoteName(note, name);
++    }
++
+     double getSampleRate() const noexcept
+     {
+         return fPlugin.getSampleRate();
+@@ -3432,6 +3438,161 @@ struct dpf_midi_mapping : v3_midi_mapping_cpp {
+ 
+     DISTRHO_PREVENT_HEAP_ALLOCATION
+ };
++
++// --------------------------------------------------------------------------------------------------------------------
++// dpf_unit_info
++//
++// Exposes per-MIDI-note names (Plugin::getMidiNoteName) via VST3's IUnitInfo, using a single
++// root unit and a single dummy program list whose only purpose is to carry pitch names.
++// This is what lets hosts show e.g. "Kick"/"Snare" instead of note numbers for drum plugins.
++
++struct dpf_unit_info : v3_unit_information_cpp {
++    std::atomic_int refcounter;
++    ScopedPointer<PluginVst3>& vst3;
++
++    dpf_unit_info(ScopedPointer<PluginVst3>& v)
++        : refcounter(1),
++          vst3(v)
++    {
++        // v3_funknown, single instance
++        query_interface = query_interface_unit_info;
++        ref = dpf_single_instance_ref<dpf_unit_info>;
++        unref = dpf_single_instance_unref<dpf_unit_info>;
++
++        // v3_unit_information
++        unit.get_unit_count = get_unit_count;
++        unit.get_unit_info = get_unit_info;
++        unit.get_program_list_count = get_program_list_count;
++        unit.get_program_list_info = get_program_list_info;
++        unit.get_program_name = get_program_name;
++        unit.get_program_info = get_program_info;
++        unit.has_program_pitch_names = has_program_pitch_names;
++        unit.get_program_pitch_name = get_program_pitch_name;
++        unit.get_selected_unit = get_selected_unit;
++        unit.select_unit = select_unit;
++        unit.get_unit_by_bus = get_unit_by_bus;
++        unit.set_unit_program_data = set_unit_program_data;
++    }
++
++    // ----------------------------------------------------------------------------------------------------------------
++    // v3_funknown
++
++    static v3_result V3_API query_interface_unit_info(void* const self, const v3_tuid iid, void** const iface)
++    {
++        dpf_unit_info* const info = *static_cast<dpf_unit_info**>(self);
++
++        if (v3_tuid_match(iid, v3_funknown_iid) ||
++            v3_tuid_match(iid, v3_unit_information_iid))
++        {
++            d_debug("query_interface_unit_info => %p %s %p | OK", self, tuid2str(iid), iface);
++            ++info->refcounter;
++            *iface = self;
++            return V3_OK;
++        }
++
++        d_debug("query_interface_unit_info => %p %s %p | WARNING UNSUPPORTED", self, tuid2str(iid), iface);
++
++        *iface = nullptr;
++        return V3_NO_INTERFACE;
++    }
++
++    // ----------------------------------------------------------------------------------------------------------------
++    // v3_unit_information
++
++    static int32_t V3_API get_unit_count(void*)
++    {
++        return 1;
++    }
++
++    static v3_result V3_API get_unit_info(void*, const int32_t unit_idx, v3_unit_info* const info)
++    {
++        DISTRHO_SAFE_ASSERT_INT_RETURN(unit_idx == 0, unit_idx, V3_INVALID_ARG);
++
++        info->id = 0;
++        info->parent_unit_id = -1;
++        strncpy_utf16(info->name, "Root", 128);
++        info->program_list_id = 0;
++        return V3_OK;
++    }
++
++    static int32_t V3_API get_program_list_count(void*)
++    {
++        return 1;
++    }
++
++    static v3_result V3_API get_program_list_info(void*, const int32_t list_idx, v3_program_list_info* const info)
++    {
++        DISTRHO_SAFE_ASSERT_INT_RETURN(list_idx == 0, list_idx, V3_INVALID_ARG);
++
++        info->id = 0;
++        strncpy_utf16(info->name, "Notes", 128);
++        info->programCount = 1;
++        return V3_OK;
++    }
++
++    static v3_result V3_API get_program_name(void*, const int32_t list_id, const int32_t program_idx, v3_str_128 name)
++    {
++        DISTRHO_SAFE_ASSERT_INT_RETURN(list_id == 0, list_id, V3_INVALID_ARG);
++        DISTRHO_SAFE_ASSERT_INT_RETURN(program_idx == 0, program_idx, V3_INVALID_ARG);
++
++        strncpy_utf16(name, "Default", 128);
++        return V3_OK;
++    }
++
++    static v3_result V3_API get_program_info(void*, int32_t, int32_t, const char*, v3_str_128 attribute_value)
++    {
++        attribute_value[0] = 0;
++        return V3_NOT_IMPLEMENTED;
++    }
++
++    static v3_result V3_API has_program_pitch_names(void*, const int32_t list_id, const int32_t program_idx)
++    {
++        DISTRHO_SAFE_ASSERT_INT_RETURN(list_id == 0, list_id, V3_FALSE);
++        DISTRHO_SAFE_ASSERT_INT_RETURN(program_idx == 0, program_idx, V3_FALSE);
++
++        return V3_TRUE;
++    }
++
++    static v3_result V3_API get_program_pitch_name(void* const self, const int32_t list_id, const int32_t program_idx,
++                                                     const int16_t midi_pitch, v3_str_128 name)
++    {
++        DISTRHO_SAFE_ASSERT_INT_RETURN(list_id == 0, list_id, V3_INVALID_ARG);
++        DISTRHO_SAFE_ASSERT_INT_RETURN(program_idx == 0, program_idx, V3_INVALID_ARG);
++        DISTRHO_SAFE_ASSERT_INT_RETURN(midi_pitch >= 0 && midi_pitch < 128, midi_pitch, V3_INVALID_ARG);
++
++        dpf_unit_info* const info = *static_cast<dpf_unit_info**>(self);
++        PluginVst3* const vst3 = info->vst3;
++        DISTRHO_SAFE_ASSERT_RETURN(vst3 != nullptr, V3_NOT_INITIALIZED);
++
++        String noteName;
++        if (! vst3->getMidiNoteName(static_cast<uint8_t>(midi_pitch), noteName) || noteName.length() == 0)
++            return V3_FALSE;
++
++        strncpy_utf16(name, noteName.buffer(), 128);
++        return V3_OK;
++    }
++
++    static int32_t V3_API get_selected_unit(void*)
++    {
++        return 0;
++    }
++
++    static v3_result V3_API select_unit(void*, const int32_t unit_id)
++    {
++        return unit_id == 0 ? V3_OK : V3_INVALID_ARG;
++    }
++
++    static v3_result V3_API get_unit_by_bus(void*, int32_t, int32_t, int32_t, int32_t, int32_t* const unit_id)
++    {
++        *unit_id = 0;
++        return V3_OK;
++    }
++
++    static v3_result V3_API set_unit_program_data(void*, int32_t, int32_t, v3_bstream**)
++    {
++        return V3_NOT_IMPLEMENTED;
++    }
++};
+ #endif // DISTRHO_PLUGIN_WANT_MIDI_INPUT
+ 
+ // --------------------------------------------------------------------------------------------------------------------
+@@ -3448,6 +3609,9 @@ struct dpf_edit_controller : v3_edit_controller_cpp {
+    #else
+     ScopedPointer<PluginVst3>& vst3;
+     bool initialized;
++   #endif
++   #if DISTRHO_PLUGIN_WANT_MIDI_INPUT
++    ScopedPointer<dpf_unit_info> unitInfo;
+    #endif
+     // cached values
+     v3_component_handler** handler;
+@@ -3521,6 +3685,9 @@ struct dpf_edit_controller : v3_edit_controller_cpp {
+         connectionComp2Ctrl = nullptr;
+         vst3 = nullptr;
+        #endif
++       #if DISTRHO_PLUGIN_WANT_MIDI_INPUT
++        unitInfo = nullptr;
++       #endif
+ 
+        #if !DPF_VST3_USES_SEPARATE_CONTROLLER
+         if (hostApplicationFromComponent != nullptr)
+@@ -3562,6 +3729,25 @@ struct dpf_edit_controller : v3_edit_controller_cpp {
+            #endif
+         }
+ 
++        if (v3_tuid_match(iid, v3_unit_information_iid))
++        {
++           #if DISTRHO_PLUGIN_WANT_MIDI_INPUT
++            d_debug("query_interface_edit_controller => %p %s %p | OK convert %p",
++                    self, tuid2str(iid), iface, controller->unitInfo.get());
++
++            if (controller->unitInfo == nullptr)
++                controller->unitInfo = new dpf_unit_info(controller->vst3);
++            else
++                ++controller->unitInfo->refcounter;
++            *iface = &controller->unitInfo;
++            return V3_OK;
++           #else
++            d_debug("query_interface_edit_controller => %p %s %p | reject unused", self, tuid2str(iid), iface);
++            *iface = nullptr;
++            return V3_NO_INTERFACE;
++           #endif
++        }
++
+         if (v3_tuid_match(iid, v3_connection_point_iid))
+         {
+            #if DPF_VST3_USES_SEPARATE_CONTROLLER

@@ -70,6 +70,9 @@ public:
         return filtered * fEnv.process() * fVelocity;
     }
 
+    // current envelope level (0..1), for UI activity indicators
+    float getLevel() const noexcept { return fEnv.getLevel(); }
+
 private:
     double fSampleRate = 44100.0;
     uint32_t fSpacingSamples = 617; // ~14ms @ 44.1kHz, recomputed in setSampleRate

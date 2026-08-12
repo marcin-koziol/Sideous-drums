@@ -67,7 +67,43 @@ enum Params : uint32_t {
     kParamMaracasDecay,
     kParamMaracasLevel,
 
-    kParamCount
+    // Cymbal-family (hi-hats/crash/ride) additions - these all share CymbalVoice, which
+    // used to leave Metal fixed at 1.0 for crash/ride and had no pitch control at all.
+    // Tune transposes the whole partial set (and Ride's Bell) by a common multiplier,
+    // same trick a real analog cymbal "tune" pot uses - see CymbalVoice's class comment.
+    kParamHatClosedTune,
+    kParamHatOpenTune,
+    kParamCrashTune,
+    kParamCrashMetal,
+    kParamRideTune,
+    kParamRideMetal,
+    // Ride-only: a dedicated pitched "bell" partial (the classic ride "ping" that rings
+    // independently of the noisy wash), mixed in on top - see CymbalVoice
+    kParamRideBellMix,
+
+    // multi-grain "shake" retrigger (see NoiseVoice's kMaxGrains) - was a single smooth
+    // noise burst, indistinguishable in character from a hi-hat; this gives Maracas its
+    // own rattling texture
+    kParamMaracasRattle,
+
+    // output params (host/UI meters only, never automatable): current envelope level
+    // (0..1) per voice, index-aligned with DrumVoiceIndex in DrumMap.hpp, used to light
+    // up the per-column "LED" in the UI while a voice is playing
+    kParamKickActive,
+    kParamSnareActive,
+    kParamHatClosedActive,
+    kParamHatOpenActive,
+    kParamTomLowActive,
+    kParamTomMidActive,
+    kParamTomHighActive,
+    kParamCrashActive,
+    kParamRideActive,
+    kParamRimActive,
+    kParamClapActive,
+    kParamMaracasActive,
+
+    kParamCount,
+    kParamFirstActive = kParamKickActive
 };
 
 enum class ParamShape { Linear, Logarithmic };
@@ -142,6 +178,28 @@ inline const ParamInfo& getParamInfo(uint32_t index) noexcept
 
         { "Maracas Decay",    "maracas_decay",     "s",  0.02f,  0.3f,    0.08f,  ParamShape::Logarithmic },
         { "Maracas Level",    "maracas_level",     "",   0.0f,   1.0f,    0.7f,   ParamShape::Linear },
+
+        { "Hat Closed Tune", "hat_closed_tune_st", "st", -12.0f, 12.0f, 0.0f,  ParamShape::Linear },
+        { "Hat Open Tune",   "hat_open_tune_st",   "st", -12.0f, 12.0f, 0.0f,  ParamShape::Linear },
+        { "Crash Tune",      "crash_tune_st",      "st", -12.0f, 12.0f, 0.0f,  ParamShape::Linear },
+        { "Crash Metal",     "crash_metal",        "",   0.0f,   1.0f,  0.55f, ParamShape::Linear },
+        { "Ride Tune",       "ride_tune_st",        "st", -12.0f, 12.0f, 0.0f, ParamShape::Linear },
+        { "Ride Metal",      "ride_metal",          "",   0.0f,   1.0f,  0.85f, ParamShape::Linear },
+        { "Ride Bell",       "ride_bell",           "",   0.0f,   1.0f,  0.45f, ParamShape::Linear },
+        { "Maracas Rattle",  "maracas_rattle",      "",   0.0f,   1.0f,  0.55f, ParamShape::Linear },
+
+        { "Kick Active",       "kick_active",       "", 0.0f, 1.0f, 0.0f, ParamShape::Linear },
+        { "Snare Active",      "snare_active",      "", 0.0f, 1.0f, 0.0f, ParamShape::Linear },
+        { "Hat Closed Active", "hat_closed_active", "", 0.0f, 1.0f, 0.0f, ParamShape::Linear },
+        { "Hat Open Active",   "hat_open_active",   "", 0.0f, 1.0f, 0.0f, ParamShape::Linear },
+        { "Tom Low Active",    "tom_low_active",    "", 0.0f, 1.0f, 0.0f, ParamShape::Linear },
+        { "Tom Mid Active",    "tom_mid_active",    "", 0.0f, 1.0f, 0.0f, ParamShape::Linear },
+        { "Tom High Active",   "tom_high_active",   "", 0.0f, 1.0f, 0.0f, ParamShape::Linear },
+        { "Crash Active",      "crash_active",      "", 0.0f, 1.0f, 0.0f, ParamShape::Linear },
+        { "Ride Active",       "ride_active",       "", 0.0f, 1.0f, 0.0f, ParamShape::Linear },
+        { "Rimshot Active",    "rim_active",        "", 0.0f, 1.0f, 0.0f, ParamShape::Linear },
+        { "Clap Active",       "clap_active",       "", 0.0f, 1.0f, 0.0f, ParamShape::Linear },
+        { "Maracas Active",    "maracas_active",    "", 0.0f, 1.0f, 0.0f, ParamShape::Linear },
     };
     return table[index];
 }

@@ -41,4 +41,21 @@ static constexpr int kDrumMidiNotes[kVoiceCount] = {
     70, // Maracas    - GM "Maracas"
 };
 
+// index-aligned with DrumVoiceIndex above; human-readable names for the fixed note map,
+// used for host-side MIDI note names (Ardour MIDNAM / VST3 program pitch names)
+static constexpr const char* const kDrumVoiceNames[kVoiceCount] = {
+    "Kick",
+    "Snare",
+    "Hat Closed",
+    "Hat Open",
+    "Tom Low",
+    "Tom Mid",
+    "Tom High",
+    "Crash",
+    "Ride",
+    "Rimshot",
+    "Clap",
+    "Maracas",
+};
+
 } // namespace sideous

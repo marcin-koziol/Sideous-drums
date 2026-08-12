@@ -53,6 +53,9 @@ public:
         return fDrive.process(fOsc.process() * amp * fVelocity);
     }
 
+    // current envelope level (0..1), for UI activity indicators
+    float getLevel() const noexcept { return fAmpEnv.getLevel(); }
+
 private:
     SineOscillator fOsc;
     PitchEnvelope fPitchEnv;

@@ -82,6 +82,14 @@ public:
         fHatClosed.setToneRange(3000.0f, 10000.0f);
         fHatOpen.setToneRange(3000.0f, 10000.0f);
 
+        // Ride gets a tighter, more harmonically-related partial cluster (a
+        // fundamental, a close detuned pair for shimmer, near-integer
+        // overtones) instead of Crash/hi-hats' wide inharmonic spread - gives
+        // the underlying FM stack itself a more "pitched" character even
+        // before the dedicated Bell layer is mixed in, see CymbalVoice
+        static constexpr float kRidePartials[6] = { 400.0f, 410.0f, 802.0f, 1198.0f, 1585.0f, 2003.0f };
+        fRide.setPartials(kRidePartials);
+
         for (uint32_t i = 0; i < kParamCount; ++i)
             setParameterValue(i, getParamInfo(i).def);
     }
@@ -102,7 +110,25 @@ public:
         fMaracas.setSampleRate(sampleRate);
     }
 
-    float getParameterValue(uint32_t index) const noexcept { return fValues[index]; }
+    float getParameterValue(uint32_t index) const noexcept
+    {
+        switch (index)
+        {
+        case kParamKickActive:      return fKick.getLevel();
+        case kParamSnareActive:     return fSnare.getLevel();
+        case kParamHatClosedActive: return fHatClosed.getLevel();
+        case kParamHatOpenActive:   return fHatOpen.getLevel();
+        case kParamTomLowActive:    return fTomLow.getLevel();
+        case kParamTomMidActive:    return fTomMid.getLevel();
+        case kParamTomHighActive:   return fTomHigh.getLevel();
+        case kParamCrashActive:     return fCrash.getLevel();
+        case kParamRideActive:      return fRide.getLevel();
+        case kParamRimActive:       return fRim.getLevel();
+        case kParamClapActive:      return fClap.getLevel();
+        case kParamMaracasActive:   return fMaracas.getLevel();
+        default:                    return fValues[index];
+        }
+    }
 
     void setParameterValue(uint32_t index, float value) noexcept
     {
@@ -131,11 +157,13 @@ public:
         case kParamHatClosedDecay:  fHatClosed.setDecay(value); break;
         case kParamHatClosedTone:   fHatClosed.setTone(value); break;
         case kParamHatClosedMetal:  fHatClosed.setMetal(value); break;
+        case kParamHatClosedTune:   fHatClosed.setTune(value); break;
         case kParamHatClosedLevel:  fHatClosedLevel = value; break;
 
         case kParamHatOpenDecay:    fHatOpen.setDecay(value); break;
         case kParamHatOpenTone:     fHatOpen.setTone(value); break;
         case kParamHatOpenMetal:    fHatOpen.setMetal(value); break;
+        case kParamHatOpenTune:     fHatOpen.setTune(value); break;
         case kParamHatOpenLevel:    fHatOpenLevel = value; break;
 
         case kParamTomLowTune:      fTomLow.setTune(value); break;
@@ -158,6 +186,12 @@ public:
         case kParamRideTone:        fRide.setTone(value); break;
         case kParamRideLevel:       fRideLevel = value; break;
 
+        case kParamCrashTune:       fCrash.setTune(value); break;
+        case kParamCrashMetal:      fCrash.setMetal(value); break;
+        case kParamRideTune:        fRide.setTune(value); break;
+        case kParamRideMetal:       fRide.setMetal(value); break;
+        case kParamRideBellMix:     fRide.setBellMix(value); break;
+
         case kParamRimTune:         fRim.setTune(value); break;
         case kParamRimLevel:        fRimLevel = value; break;
 
@@ -166,6 +200,7 @@ public:
 
         case kParamMaracasDecay:    fMaracas.setDecay(value); break;
         case kParamMaracasLevel:    fMaracasLevel = value; break;
+        case kParamMaracasRattle:   fMaracas.setRattle(value); break;
 
         default: break;
         }

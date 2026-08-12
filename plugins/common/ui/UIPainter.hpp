@@ -18,6 +18,7 @@
 
 #include <cairo.h>
 
+#include <algorithm>
 #include <cmath>
 #include <cstdio>
 #include <cstring>
@@ -77,12 +78,19 @@ struct Knob
     Color accent;
 };
 
+// height of the clickable "trigger pad" zone at the top of each voice's panel
+// (title + MIDI note caption + LED all live inside it) - shared between the
+// layout builder (knobs start below it) and the hit-test/paint code
+static constexpr float kPanelHeaderH = 58.0f;
+
 struct PanelBox
 {
     float x, y, w, h;
     const char* title;
     Color accent;
-    int midiNote = -1; // -1 = no note caption drawn (the Master column)
+    int midiNote = -1;   // -1 = no note caption / no trigger pad (the Master column)
+    int activeParam = -1; // -1 = no LED (the Master column); else index of this
+                           // voice's output "Active" param, see Params.hpp
 };
 
 // a plain clickable button, not tied to a DPF parameter - presets are pure
@@ -118,7 +126,7 @@ inline void addColumnKnobs(std::vector<Knob>& knobs, const PanelBox& p, Color ac
     const size_t rows = (n + 1) / 2;
     const float radius = 22.0f;
     const float rowPitch = 84.0f;
-    const float contentTop = p.y + 58.0f;
+    const float contentTop = p.y + kPanelHeaderH;
     const float contentBottom = p.y + p.h - 10.0f;
     const float blockH = (float)rows * rowPitch;
     const float extra = (contentBottom - contentTop) - blockH;
@@ -144,6 +152,7 @@ struct ColumnSpec
     int midiNote; // -1 = no caption (Master)
     Color accent;
     std::initializer_list<std::pair<uint32_t, const char*>> knobs;
+    int activeParam = -1; // -1 = no LED (Master)
 };
 
 // lays out one row of columns spanning the full width, each column's height
@@ -157,7 +166,7 @@ inline void layoutRow(Layout& L, const ColumnSpec* specs, int n, float margin, f
     for (int c = 0; c < n; ++c)
     {
         const float x = margin + (colW + gap) * (float)c;
-        L.panels.push_back({ x, rowY, colW, rowH, specs[c].title, specs[c].accent, specs[c].midiNote });
+        L.panels.push_back({ x, rowY, colW, rowH, specs[c].title, specs[c].accent, specs[c].midiNote, specs[c].activeParam });
         addColumnKnobs(L.knobs, L.panels.back(), specs[c].accent, specs[c].knobs);
     }
 }
@@ -171,43 +180,62 @@ inline Layout buildLayout(float width, float height)
     const float margin = 16.0f;
     const float gap = 8.0f;
 
-    // top row: the "hands-on" percussion (kick/snare/hats/rim/clap) - kick
-    // and snare each need 3 knob-rows, so this row is the taller of the two
+    // top row: the voices that need the most knobs - kick/snare (6 each) and
+    // now the cymbal family too (hi-hats/crash gained Metal+Tune, Ride also
+    // gets Bell) - all fit this row's 3-knob-row height
     const ColumnSpec row1[6] = {
         { "KICK", kDrumMidiNotes[kVoiceKick], kKickAccent,
           { { kParamKickTune, "TUNE" }, { kParamKickPunchDepth, "PUNCH" },
             { kParamKickPunchDecay, "P-DEC" }, { kParamKickDecay, "DECAY" },
-            { kParamKickDrive, "DRIVE" }, { kParamKickLevel, "LEVEL" } } },
+            { kParamKickDrive, "DRIVE" }, { kParamKickLevel, "LEVEL" } },
+          kParamKickActive },
         { "SNARE", kDrumMidiNotes[kVoiceSnare], kSnareAccent,
           { { kParamSnareTune, "TUNE" }, { kParamSnareToneMix, "TONE" },
             { kParamSnareToneDecay, "T-DEC" }, { kParamSnareSnap, "SNAP" },
-            { kParamSnareBright, "HIGH" }, { kParamSnareLevel, "LEVEL" } } },
+            { kParamSnareBright, "HIGH" }, { kParamSnareLevel, "LEVEL" } },
+          kParamSnareActive },
         { "HAT CL", kDrumMidiNotes[kVoiceHatClosed], kHatClosedAccent,
           { { kParamHatClosedDecay, "DECAY" }, { kParamHatClosedTone, "TONE" },
-            { kParamHatClosedMetal, "METAL" }, { kParamHatClosedLevel, "LEVEL" } } },
+            { kParamHatClosedMetal, "METAL" }, { kParamHatClosedTune, "TUNE" },
+            { kParamHatClosedLevel, "LEVEL" } },
+          kParamHatClosedActive },
         { "HAT OP", kDrumMidiNotes[kVoiceHatOpen], kHatOpenAccent,
           { { kParamHatOpenDecay, "DECAY" }, { kParamHatOpenTone, "TONE" },
-            { kParamHatOpenMetal, "METAL" }, { kParamHatOpenLevel, "LEVEL" } } },
-        { "RIMSHOT", kDrumMidiNotes[kVoiceRim], kRimAccent,
-          { { kParamRimTune, "TUNE" }, { kParamRimLevel, "LEVEL" } } },
-        { "CLAP", kDrumMidiNotes[kVoiceClap], kClapAccent,
-          { { kParamClapDecay, "DECAY" }, { kParamClapLevel, "LEVEL" } } },
+            { kParamHatOpenMetal, "METAL" }, { kParamHatOpenTune, "TUNE" },
+            { kParamHatOpenLevel, "LEVEL" } },
+          kParamHatOpenActive },
+        { "CRASH", kDrumMidiNotes[kVoiceCrash], kCrashAccent,
+          { { kParamCrashDecay, "DECAY" }, { kParamCrashTone, "TONE" },
+            { kParamCrashMetal, "METAL" }, { kParamCrashTune, "TUNE" },
+            { kParamCrashLevel, "LEVEL" } },
+          kParamCrashActive },
+        { "RIDE", kDrumMidiNotes[kVoiceRide], kRideAccent,
+          { { kParamRideDecay, "DECAY" }, { kParamRideTone, "TONE" },
+            { kParamRideMetal, "METAL" }, { kParamRideTune, "TUNE" },
+            { kParamRideBellMix, "BELL" }, { kParamRideLevel, "LEVEL" } },
+          kParamRideActive },
     };
 
-    // bottom row: toms/cymbals/perc/master - none need more than 2 knob-rows
+    // bottom row: toms/perc/master - none need more than 2 knob-rows
     const ColumnSpec row2[7] = {
         { "TOM LO", kDrumMidiNotes[kVoiceTomLow], kTomLowAccent,
-          { { kParamTomLowTune, "TUNE" }, { kParamTomLowDecay, "DECAY" }, { kParamTomLowLevel, "LEVEL" } } },
+          { { kParamTomLowTune, "TUNE" }, { kParamTomLowDecay, "DECAY" }, { kParamTomLowLevel, "LEVEL" } },
+          kParamTomLowActive },
         { "TOM MID", kDrumMidiNotes[kVoiceTomMid], kTomMidAccent,
-          { { kParamTomMidTune, "TUNE" }, { kParamTomMidDecay, "DECAY" }, { kParamTomMidLevel, "LEVEL" } } },
+          { { kParamTomMidTune, "TUNE" }, { kParamTomMidDecay, "DECAY" }, { kParamTomMidLevel, "LEVEL" } },
+          kParamTomMidActive },
         { "TOM HI", kDrumMidiNotes[kVoiceTomHigh], kTomHighAccent,
-          { { kParamTomHighTune, "TUNE" }, { kParamTomHighDecay, "DECAY" }, { kParamTomHighLevel, "LEVEL" } } },
-        { "CRASH", kDrumMidiNotes[kVoiceCrash], kCrashAccent,
-          { { kParamCrashDecay, "DECAY" }, { kParamCrashTone, "TONE" }, { kParamCrashLevel, "LEVEL" } } },
-        { "RIDE", kDrumMidiNotes[kVoiceRide], kRideAccent,
-          { { kParamRideDecay, "DECAY" }, { kParamRideTone, "TONE" }, { kParamRideLevel, "LEVEL" } } },
+          { { kParamTomHighTune, "TUNE" }, { kParamTomHighDecay, "DECAY" }, { kParamTomHighLevel, "LEVEL" } },
+          kParamTomHighActive },
+        { "RIMSHOT", kDrumMidiNotes[kVoiceRim], kRimAccent,
+          { { kParamRimTune, "TUNE" }, { kParamRimLevel, "LEVEL" } },
+          kParamRimActive },
+        { "CLAP", kDrumMidiNotes[kVoiceClap], kClapAccent,
+          { { kParamClapDecay, "DECAY" }, { kParamClapLevel, "LEVEL" } },
+          kParamClapActive },
         { "MARACAS", kDrumMidiNotes[kVoiceMaracas], kMaracasAccent,
-          { { kParamMaracasDecay, "DECAY" }, { kParamMaracasLevel, "LEVEL" } } },
+          { { kParamMaracasDecay, "DECAY" }, { kParamMaracasRattle, "RATTLE" }, { kParamMaracasLevel, "LEVEL" } },
+          kParamMaracasActive },
         { "MASTER", -1, kMasterAccent,
           { { kParamMasterVolume, "VOL" }, { kParamMasterDrive, "DRIVE" }, { kParamMasterDriveMix, "MIX" } } },
     };
@@ -374,6 +402,9 @@ struct PaintState
     const char* presetEditBuffer = "";
     int hoverPresetButton = -1;   // 0=prev,1=next,2=save,3=delete, or -1
     bool presetDeleteEnabled = false; // false while on INIT - nothing to delete
+
+    int hoverPanel = -1; // index into layout.panels whose trigger pad is hovered, or -1
+    int pressPanel = -1; // index into layout.panels whose trigger pad is held down, or -1
 };
 
 inline void paintKnob(cairo_t* cr, const Knob& k, float value, bool hovered, bool dragging, bool autoShow)
@@ -509,14 +540,41 @@ inline void paint(cairo_t* cr, const Layout& L, const PaintState& state)
     paintPresetBar(cr, L.presetBar, state);
 
     // columns
-    for (const PanelBox& p : L.panels)
+    for (size_t pi = 0; pi < L.panels.size(); ++pi)
     {
+        const PanelBox& p = L.panels[pi];
+
         roundedRect(cr, p.x, p.y, p.w, p.h, 8.0);
         setColor(cr, kPanelBg);
         cairo_fill_preserve(cr);
         setColor(cr, p.accent, 0.7);
         cairo_set_line_width(cr, 1.5);
         cairo_stroke(cr);
+
+        // trigger pad: the header strip (title/MIDI-note/LED) doubles as a
+        // clickable "play this voice" button - clipped to the panel's own
+        // rounded-rect path so its top corners follow the panel's curve for
+        // free, then a thin line separates it from the knobs below
+        if (p.midiNote >= 0)
+        {
+            const bool hovered = (int)pi == state.hoverPanel;
+            const bool pressed = (int)pi == state.pressPanel;
+            const double headerAlpha = pressed ? 0.38 : (hovered ? 0.20 : 0.10);
+
+            cairo_save(cr);
+            roundedRect(cr, p.x, p.y, p.w, p.h, 8.0);
+            cairo_clip(cr);
+            cairo_rectangle(cr, p.x, p.y, p.w, kPanelHeaderH);
+            setColor(cr, p.accent, headerAlpha);
+            cairo_fill(cr);
+            cairo_restore(cr);
+
+            setColor(cr, p.accent, pressed || hovered ? 0.55 : 0.25);
+            cairo_set_line_width(cr, 1.0);
+            cairo_move_to(cr, p.x + 6.0, p.y + kPanelHeaderH);
+            cairo_line_to(cr, p.x + p.w - 6.0, p.y + kPanelHeaderH);
+            cairo_stroke(cr);
+        }
 
         if (p.title != nullptr)
         {
@@ -532,6 +590,32 @@ inline void paint(cairo_t* cr, const Layout& L, const PaintState& state)
             setFont(cr, 8.0, false);
             setColor(cr, kTextDim);
             centeredText(cr, buf, p.x + p.w * 0.5, p.y + 33.0);
+        }
+
+        // activity LED: dim "off" dot always visible in the top-right corner,
+        // glowing brighter (and briefly haloed) while the voice's envelope is
+        // above silence - state.values[activeParam] is 0..1 envelope level,
+        // updated live from DrumEngine via the plugin's output parameters
+        if (p.activeParam >= 0 && state.values != nullptr)
+        {
+            const float level = std::clamp(state.values[p.activeParam], 0.0f, 1.0f);
+            const double lx = p.x + p.w - 14.0;
+            const double ly = p.y + 14.0;
+
+            setColor(cr, p.accent, 0.22);
+            cairo_arc(cr, lx, ly, 4.5, 0.0, 2.0 * M_PI);
+            cairo_fill(cr);
+
+            if (level > 0.01f)
+            {
+                setColor(cr, p.accent, 0.30 * level);
+                cairo_arc(cr, lx, ly, 4.5 + 5.0 * level, 0.0, 2.0 * M_PI);
+                cairo_fill(cr);
+
+                setColor(cr, p.accent, 0.5 + 0.5 * level);
+                cairo_arc(cr, lx, ly, 4.5, 0.0, 2.0 * M_PI);
+                cairo_fill(cr);
+            }
         }
     }
 
