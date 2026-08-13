@@ -167,19 +167,19 @@ protected:
             const DrumEngine::VoiceOutputs vo = fEngine.processVoices();
             const float masterVol = fEngine.masterVolume();
 
-            writeBus(outputs, 0, frame, fEngine.applyMasterBus(vo.sum()));
-            writeBus(outputs, 1,  frame, vo.kick      * masterVol);
-            writeBus(outputs, 2,  frame, vo.snare     * masterVol);
-            writeBus(outputs, 3,  frame, vo.hatClosed * masterVol);
-            writeBus(outputs, 4,  frame, vo.hatOpen   * masterVol);
-            writeBus(outputs, 5,  frame, vo.tomLow    * masterVol);
-            writeBus(outputs, 6,  frame, vo.tomMid    * masterVol);
-            writeBus(outputs, 7,  frame, vo.tomHigh   * masterVol);
-            writeBus(outputs, 8,  frame, vo.crash     * masterVol);
-            writeBus(outputs, 9,  frame, vo.ride      * masterVol);
-            writeBus(outputs, 10, frame, vo.rim       * masterVol);
-            writeBus(outputs, 11, frame, vo.clap      * masterVol);
-            writeBus(outputs, 12, frame, vo.maracas   * masterVol);
+            writeBus(outputs, 0, frame, fEngine.applyMasterBus(vo.sumL()), fEngine.applyMasterBus(vo.sumR()));
+            writeBus(outputs, 1,  frame, vo.kick * masterVol);
+            writeBus(outputs, 2,  frame, vo.snare * masterVol);
+            writeBus(outputs, 3,  frame, vo.hatClosed.l * masterVol, vo.hatClosed.r * masterVol);
+            writeBus(outputs, 4,  frame, vo.hatOpen.l   * masterVol, vo.hatOpen.r   * masterVol);
+            writeBus(outputs, 5,  frame, vo.tomLow  * masterVol);
+            writeBus(outputs, 6,  frame, vo.tomMid  * masterVol);
+            writeBus(outputs, 7,  frame, vo.tomHigh * masterVol);
+            writeBus(outputs, 8,  frame, vo.crash.l * masterVol, vo.crash.r * masterVol);
+            writeBus(outputs, 9,  frame, vo.ride.l  * masterVol, vo.ride.r  * masterVol);
+            writeBus(outputs, 10, frame, vo.rim     * masterVol);
+            writeBus(outputs, 11, frame, vo.clap    * masterVol);
+            writeBus(outputs, 12, frame, vo.maracas * masterVol);
         }
 
         while (nextEvent < midiEventCount)
@@ -196,6 +196,12 @@ private:
     {
         outputs[bus * 2][frame] = value;
         outputs[bus * 2 + 1][frame] = value;
+    }
+
+    static void writeBus(float** outputs, uint32_t bus, uint32_t frame, float left, float right) noexcept
+    {
+        outputs[bus * 2][frame] = left;
+        outputs[bus * 2 + 1][frame] = right;
     }
 
     DrumEngine fEngine;

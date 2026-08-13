@@ -181,8 +181,8 @@ inline Layout buildLayout(float width, float height)
     const float gap = 8.0f;
 
     // top row: the voices that need the most knobs - kick/snare (6 each) and
-    // now the cymbal family too (hi-hats/crash gained Metal+Tune, Ride also
-    // gets Bell) - all fit this row's 3-knob-row height
+    // now the whole cymbal family too (Metal/Tune/Attack on all four, Ride
+    // also gets Bell, 7 knobs - the tallest column, sets this row's height)
     const ColumnSpec row1[6] = {
         { "KICK", kDrumMidiNotes[kVoiceKick], kKickAccent,
           { { kParamKickTune, "TUNE" }, { kParamKickPunchDepth, "PUNCH" },
@@ -197,22 +197,23 @@ inline Layout buildLayout(float width, float height)
         { "HAT CL", kDrumMidiNotes[kVoiceHatClosed], kHatClosedAccent,
           { { kParamHatClosedDecay, "DECAY" }, { kParamHatClosedTone, "TONE" },
             { kParamHatClosedMetal, "METAL" }, { kParamHatClosedTune, "TUNE" },
-            { kParamHatClosedLevel, "LEVEL" } },
+            { kParamHatClosedAttack, "ATTACK" }, { kParamHatClosedLevel, "LEVEL" } },
           kParamHatClosedActive },
         { "HAT OP", kDrumMidiNotes[kVoiceHatOpen], kHatOpenAccent,
           { { kParamHatOpenDecay, "DECAY" }, { kParamHatOpenTone, "TONE" },
             { kParamHatOpenMetal, "METAL" }, { kParamHatOpenTune, "TUNE" },
-            { kParamHatOpenLevel, "LEVEL" } },
+            { kParamHatOpenAttack, "ATTACK" }, { kParamHatOpenLevel, "LEVEL" } },
           kParamHatOpenActive },
         { "CRASH", kDrumMidiNotes[kVoiceCrash], kCrashAccent,
           { { kParamCrashDecay, "DECAY" }, { kParamCrashTone, "TONE" },
             { kParamCrashMetal, "METAL" }, { kParamCrashTune, "TUNE" },
-            { kParamCrashLevel, "LEVEL" } },
+            { kParamCrashAttack, "ATTACK" }, { kParamCrashLevel, "LEVEL" } },
           kParamCrashActive },
         { "RIDE", kDrumMidiNotes[kVoiceRide], kRideAccent,
           { { kParamRideDecay, "DECAY" }, { kParamRideTone, "TONE" },
             { kParamRideMetal, "METAL" }, { kParamRideTune, "TUNE" },
-            { kParamRideBellMix, "BELL" }, { kParamRideLevel, "LEVEL" } },
+            { kParamRideAttack, "ATTACK" }, { kParamRideBellMix, "BELL" },
+            { kParamRideLevel, "LEVEL" } },
           kParamRideActive },
     };
 
@@ -267,7 +268,7 @@ inline Layout buildLayout(float width, float height)
     }
 
     const float row1Y = presetBarY + presetBarH + rowGap;
-    const float row1H = 320.0f; // fits 3 knob-rows (kick/snare's 6 knobs each)
+    const float row1H = 404.0f; // fits 4 knob-rows (Ride's 7 knobs, the tallest column)
     const float row2Y = row1Y + row1H + rowGap;
     const float row2H = height - row2Y - margin;
 

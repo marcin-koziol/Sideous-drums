@@ -81,6 +81,12 @@ enum Params : uint32_t {
     // independently of the noisy wash), mixed in on top - see CymbalVoice
     kParamRideBellMix,
 
+    // envelope rise time - was fixed at 2ms with no user control (see CymbalVoice)
+    kParamHatClosedAttack,
+    kParamHatOpenAttack,
+    kParamCrashAttack,
+    kParamRideAttack,
+
     // multi-grain "shake" retrigger (see NoiseVoice's kMaxGrains) - was a single smooth
     // noise burst, indistinguishable in character from a hi-hat; this gives Maracas its
     // own rattling texture
@@ -192,6 +198,12 @@ inline const ParamInfo& getParamInfo(uint32_t index) noexcept
         { "Ride Tune",       "ride_tune_st",        "st", -12.0f, 12.0f, 0.0f, ParamShape::Linear },
         { "Ride Metal",      "ride_metal",          "",   0.0f,   1.0f,  0.85f, ParamShape::Linear },
         { "Ride Bell",       "ride_bell",           "",   0.0f,   1.0f,  0.45f, ParamShape::Linear },
+
+        { "Hat Closed Attack", "hat_closed_attack", "s", 0.0005f, 0.04f, 0.002f, ParamShape::Logarithmic },
+        { "Hat Open Attack",   "hat_open_attack",   "s", 0.0005f, 0.04f, 0.002f, ParamShape::Logarithmic },
+        { "Crash Attack",      "crash_attack",      "s", 0.0005f, 0.04f, 0.002f, ParamShape::Logarithmic },
+        { "Ride Attack",       "ride_attack",       "s", 0.0005f, 0.04f, 0.002f, ParamShape::Logarithmic },
+
         { "Maracas Rattle",  "maracas_rattle",      "",   0.0f,   1.0f,  0.55f, ParamShape::Linear },
 
         { "Clap Tone",       "clap_tone",           "Hz", 500.0f, 3000.0f, 1200.0f, ParamShape::Logarithmic },

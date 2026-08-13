@@ -49,17 +49,26 @@ class DrumEngine
 public:
     // one sample's worth of every voice, already scaled by its own Level
     // knob - the stereo plugin sums these itself, the multi-out plugin
-    // additionally writes each field to its own dedicated output bus
+    // additionally writes each field to its own dedicated output bus.
+    // Hats/crash/ride are genuinely stereo (see CymbalVoice); everything
+    // else is a single mono value fed identically to both channels.
     struct VoiceOutputs
     {
-        float kick, snare, hatClosed, hatOpen;
+        float kick, snare;
+        CymbalVoice::StereoSample hatClosed, hatOpen, crash, ride;
         float tomLow, tomMid, tomHigh;
-        float crash, ride, rim, clap, maracas;
+        float rim, clap, maracas;
 
-        float sum() const noexcept
+        float sumL() const noexcept
         {
-            return kick + snare + hatClosed + hatOpen + tomLow + tomMid + tomHigh
-                 + crash + ride + rim + clap + maracas;
+            return kick + snare + hatClosed.l + hatOpen.l + tomLow + tomMid + tomHigh
+                 + crash.l + ride.l + rim + clap + maracas;
+        }
+
+        float sumR() const noexcept
+        {
+            return kick + snare + hatClosed.r + hatOpen.r + tomLow + tomMid + tomHigh
+                 + crash.r + ride.r + rim + clap + maracas;
         }
     };
 
@@ -208,6 +217,11 @@ public:
         case kParamRideMetal:       fRide.setMetal(value); break;
         case kParamRideBellMix:     fRide.setBellMix(value); break;
 
+        case kParamHatClosedAttack: fHatClosed.setAttack(value); break;
+        case kParamHatOpenAttack:   fHatOpen.setAttack(value); break;
+        case kParamCrashAttack:     fCrash.setAttack(value); break;
+        case kParamRideAttack:      fRide.setAttack(value); break;
+
         case kParamRimTune:         fRim.setTune(value); break;
         case kParamRimLevel:        fRimLevel = value; break;
 
@@ -250,13 +264,21 @@ public:
         VoiceOutputs vo;
         vo.kick      = fKickLevel      * fKick.process();
         vo.snare     = fSnareLevel     * fSnare.process();
-        vo.hatClosed = fHatClosedLevel * fHatClosed.process();
-        vo.hatOpen   = fHatOpenLevel   * fHatOpen.process();
+
+        const CymbalVoice::StereoSample hc = fHatClosed.process();
+        vo.hatClosed = { fHatClosedLevel * hc.l, fHatClosedLevel * hc.r };
+        const CymbalVoice::StereoSample ho = fHatOpen.process();
+        vo.hatOpen   = { fHatOpenLevel * ho.l, fHatOpenLevel * ho.r };
+
         vo.tomLow    = fTomLowLevel    * fTomLow.process();
         vo.tomMid    = fTomMidLevel    * fTomMid.process();
         vo.tomHigh   = fTomHighLevel   * fTomHigh.process();
-        vo.crash     = fCrashLevel     * fCrash.process();
-        vo.ride      = fRideLevel      * fRide.process();
+
+        const CymbalVoice::StereoSample cr = fCrash.process();
+        vo.crash     = { fCrashLevel * cr.l, fCrashLevel * cr.r };
+        const CymbalVoice::StereoSample rd = fRide.process();
+        vo.ride      = { fRideLevel * rd.l, fRideLevel * rd.r };
+
         vo.rim       = fRimLevel       * fRim.process();
         vo.clap      = fClapLevel      * fClap.process();
         vo.maracas   = fMaracasLevel   * fMaracas.process();

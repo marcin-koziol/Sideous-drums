@@ -40,7 +40,16 @@ crash=49, ride=51, rimshot=37, clap=39, maracas=70):
   spread) for a more "pitched" wash, defaults to a higher Metal setting for
   more definition, and adds a Bell knob — a dedicated sine "ping" layer with
   its own (longer) envelope that rings independently of the noisy wash, the
-  classic ride-bell character
+  classic ride-bell character. All four are genuinely stereo now (separate
+  detuned oscillator/filter/noise chains per channel, not one mono signal
+  copied to L/R), the 6 partials are also ring-modulated against each other
+  in pairs for a denser spectrum than a plain sum gives, and a slow always-on
+  pitch-drift LFO (opposite phase between L/R) keeps the decay tail moving
+  instead of sitting on a static filtered-noise hiss. Attack (was a fixed,
+  unexposed 2ms) controls the wash/bell envelopes' rise time; separately, a
+  fixed, always-on broadband noise "click" fires on every hit regardless of
+  Attack, since a band-limited FM stack fading in - however fast - still
+  can't fake the instant full-spectrum transient of a real stick strike
 - **Toms** (low/mid/high) — same engine as the kick, different pitch ranges,
   with a fixed (non-exposed) pitch envelope baked in for character
 - **Rimshot** — short sine tock + short filtered noise tick, both fixed-decay
@@ -90,7 +99,12 @@ Ten factory presets (Classic 808, 909 Techno, Trap Snap, Dub Wobble Toms,
 Bright Pop Kit, Lo-Fi Chip, Metal Overload, Soft Brushes, Industrial Noise,
 Deep Sub Growl) are seeded into that folder the first time the UI runs with
 an empty library — from then on they're just ordinary presets, editable and
-deletable like anything you save yourself.
+deletable like anything you save yourself. Presets only need to list the
+parameters they actually override (everything else falls back to that
+param's default), which kept them automatically forward-compatible as the
+kit grew - but each one has also been revisited by hand so the newer cymbal
+(Metal/Tune/Attack/Bell), Clap (Tone/Hands), and Maracas (Rattle) controls
+now carry each preset's character too, not just sit at their defaults.
 
 ## Two builds
 

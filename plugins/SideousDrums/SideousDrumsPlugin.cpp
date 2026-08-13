@@ -122,9 +122,9 @@ protected:
                 ++nextEvent;
             }
 
-            const float mix = fEngine.applyMasterBus(fEngine.processVoices().sum());
-            outL[frame] = mix;
-            outR[frame] = mix;
+            const DrumEngine::VoiceOutputs vo = fEngine.processVoices();
+            outL[frame] = fEngine.applyMasterBus(vo.sumL());
+            outR[frame] = fEngine.applyMasterBus(vo.sumR());
         }
 
         while (nextEvent < midiEventCount)

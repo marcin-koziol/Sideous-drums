@@ -61,21 +61,22 @@ public:
     void trigger(float velocity) noexcept
     {
         fVelocity = velocity;
-        fStep = 0;
+        fPulsesRemaining = fHandCount; // snapshot Hands now - later knob turns
+                                        // must not affect a hit already in flight
         fCountdown = 0; // fires the first pulse on the very next process() call
     }
 
     float process() noexcept
     {
-        if (fStep < fHandCount)
+        if (fPulsesRemaining > 0)
         {
             if (fCountdown == 0)
             {
-                const bool isBody = fStep == fHandCount - 1;
+                const bool isBody = fPulsesRemaining == 1; // last one = the body pulse
                 fEnv.setDecay(isBody ? fBodyDecay : kFlamDecaySeconds);
                 fEnv.noteOn();
                 fCountdown = fSpacingSamples;
-                ++fStep;
+                --fPulsesRemaining;
             }
             else
             {
@@ -103,7 +104,8 @@ private:
     float fVelocity = 1.0f;
 
     uint32_t fHandCount = 4; // 3 flams + 1 body, matches the old fixed kFlamCount=3
-    uint32_t fStep = kMaxHands; // idle until first trigger()
+    uint32_t fPulsesRemaining = 0; // idle until first trigger(); counts down, never
+                                    // compared against the live (knob-mutable) fHandCount
     uint32_t fCountdown = 0;
 };
 

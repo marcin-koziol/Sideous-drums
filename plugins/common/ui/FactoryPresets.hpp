@@ -36,7 +36,9 @@ inline const std::vector<FactoryPreset>& factoryPresets()
             { "kick_decay", 0.6f }, { "kick_drive", 0.0f },
             { "snare_tune", 190.0f }, { "snare_tone_mix", 0.6f }, { "snare_bright", 1800.0f },
             { "hat_closed_decay", 0.06f }, { "hat_closed_metal", 0.7f },
-            { "clap_decay", 0.2f },
+            { "clap_decay", 0.2f }, { "clap_tone", 1000.0f }, { "clap_hands", 3.0f },
+            { "crash_metal", 0.35f }, { "ride_metal", 0.5f }, { "ride_bell", 0.2f },
+            { "maracas_rattle", 0.4f },
         }},
         // Punchy driven kick, fully metallic hats, bright crash - the
         // classic 909-vibe four-on-the-floor kit
@@ -44,14 +46,18 @@ inline const std::vector<FactoryPreset>& factoryPresets()
             { "kick_tune", 60.0f }, { "kick_punch_depth", 36.0f }, { "kick_decay", 0.25f }, { "kick_drive", 0.5f },
             { "hat_closed_metal", 1.0f }, { "hat_closed_decay", 0.05f },
             { "hat_open_metal", 1.0f }, { "hat_open_decay", 0.35f },
-            { "crash_tone", 0.8f }, { "master_drive", 0.15f }, { "master_drive_mix", 0.6f },
+            { "crash_tone", 0.8f }, { "crash_metal", 1.0f }, { "crash_attack", 0.001f },
+            { "ride_metal", 1.0f }, { "ride_bell", 0.5f }, { "ride_attack", 0.001f },
+            { "master_drive", 0.15f }, { "master_drive_mix", 0.6f },
         }},
         // Short tight kick, snappy bright snare, fast clipped hats - built
         // for busy trap-style hi-hat rolls
         { "Trap Snap", {
             { "kick_tune", 50.0f }, { "kick_decay", 0.18f }, { "kick_punch_depth", 28.0f },
             { "snare_snap", 0.05f }, { "snare_bright", 4500.0f }, { "snare_tone_mix", 0.3f },
-            { "hat_closed_decay", 0.03f }, { "hat_closed_metal", 0.6f },
+            { "hat_closed_decay", 0.03f }, { "hat_closed_metal", 0.6f }, { "hat_closed_attack", 0.0005f },
+            { "clap_tone", 2200.0f }, { "clap_hands", 2.0f },
+            { "maracas_rattle", 0.8f },
         }},
         // Deep detuned toms with long decays, hats turned down toward the
         // plain-noise end of Metal for a soft dub-echo-friendly kit
@@ -59,14 +65,21 @@ inline const std::vector<FactoryPreset>& factoryPresets()
             { "tom_low_tune", 65.0f }, { "tom_low_decay", 0.6f },
             { "tom_mid_tune", 100.0f }, { "tom_mid_decay", 0.55f },
             { "tom_high_tune", 160.0f }, { "tom_high_decay", 0.5f },
-            { "hat_closed_metal", 0.2f }, { "hat_open_metal", 0.2f },
+            { "hat_closed_metal", 0.2f }, { "hat_closed_tune_st", -2.0f },
+            { "hat_open_metal", 0.2f }, { "hat_open_tune_st", -2.0f },
+            { "crash_metal", 0.15f }, { "crash_tune_st", -2.0f }, { "crash_attack", 0.008f },
+            { "ride_metal", 0.15f }, { "ride_tune_st", -2.0f }, { "ride_attack", 0.008f }, { "ride_bell", 0.1f },
+            { "maracas_rattle", 0.3f },
             { "master_drive", 0.3f }, { "master_drive_mix", 0.5f },
         }},
         // Everything bright and forward - snappy snare, bright cymbals,
         // a bit of kick drive for energy
         { "Bright Pop Kit", {
             { "snare_bright", 5000.0f }, { "snare_tone_mix", 0.55f },
-            { "crash_tone", 0.75f }, { "ride_tone", 0.7f },
+            { "crash_tone", 0.75f }, { "crash_metal", 0.9f }, { "crash_attack", 0.001f },
+            { "ride_tone", 0.7f }, { "ride_metal", 0.95f }, { "ride_bell", 0.7f }, { "ride_attack", 0.001f },
+            { "clap_tone", 2200.0f }, { "clap_hands", 5.0f },
+            { "maracas_rattle", 0.7f },
             { "kick_drive", 0.35f },
         }},
         // Metal knob all the way down (plain filtered noise, no FM buzz) on
@@ -74,6 +87,9 @@ inline const std::vector<FactoryPreset>& factoryPresets()
         { "Lo-Fi Chip", {
             { "hat_closed_metal", 0.0f }, { "hat_open_metal", 0.0f },
             { "snare_bright", 1200.0f },
+            { "clap_tone", 700.0f },
+            { "crash_metal", 0.0f }, { "crash_attack", 0.015f },
+            { "ride_metal", 0.0f }, { "ride_bell", 0.0f }, { "ride_attack", 0.015f },
             { "kick_drive", 0.5f },
             { "master_drive", 0.6f }, { "master_drive_mix", 0.8f },
         }},
@@ -81,6 +97,10 @@ inline const std::vector<FactoryPreset>& factoryPresets()
         // and master - the buzziest, most aggressive end of the kit's range
         { "Metal Overload", {
             { "hat_closed_metal", 1.0f }, { "hat_open_metal", 1.0f },
+            { "crash_metal", 1.0f }, { "crash_attack", 0.0005f },
+            { "ride_metal", 1.0f }, { "ride_bell", 0.6f }, { "ride_attack", 0.0005f },
+            { "clap_tone", 2800.0f }, { "clap_hands", 7.0f },
+            { "maracas_rattle", 1.0f },
             { "kick_drive", 0.8f }, { "kick_punch_depth", 40.0f },
             { "crash_level", 0.95f },
             { "master_drive", 0.7f }, { "master_drive_mix", 1.0f },
@@ -90,15 +110,22 @@ inline const std::vector<FactoryPreset>& factoryPresets()
         { "Soft Brushes", {
             { "kick_level", 0.6f }, { "kick_drive", 0.0f }, { "kick_decay", 0.5f },
             { "snare_level", 0.5f }, { "snare_tone_mix", 0.7f }, { "snare_bright", 1500.0f },
-            { "hat_closed_metal", 0.15f }, { "hat_closed_level", 0.4f },
-            { "maracas_level", 0.5f },
+            { "hat_closed_metal", 0.15f }, { "hat_closed_level", 0.4f }, { "hat_closed_attack", 0.012f },
+            { "hat_open_attack", 0.012f },
+            { "crash_metal", 0.2f }, { "crash_attack", 0.02f },
+            { "ride_metal", 0.25f }, { "ride_bell", 0.15f }, { "ride_attack", 0.02f },
+            { "clap_tone", 900.0f }, { "clap_hands", 2.0f },
+            { "maracas_rattle", 0.35f }, { "maracas_level", 0.5f },
         }},
         // Full metallic hats/cymbals plus heavy master drive and a long,
         // loud clap - a harsh, industrial-leaning kit
         { "Industrial Noise", {
             { "hat_closed_metal", 1.0f }, { "hat_closed_tone", 0.9f },
             { "hat_open_metal", 1.0f },
-            { "clap_decay", 0.4f }, { "clap_level", 0.9f },
+            { "crash_metal", 1.0f }, { "crash_attack", 0.0008f },
+            { "ride_metal", 1.0f }, { "ride_bell", 0.5f }, { "ride_attack", 0.0008f },
+            { "clap_decay", 0.4f }, { "clap_level", 0.9f }, { "clap_tone", 900.0f }, { "clap_hands", 6.0f },
+            { "maracas_rattle", 0.9f },
             { "tom_low_tune", 55.0f }, { "tom_low_decay", 0.7f },
             { "master_drive", 0.85f }, { "master_drive_mix", 1.0f },
         }},
