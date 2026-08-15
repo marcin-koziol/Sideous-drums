@@ -25,7 +25,7 @@
 
 #define DISTRHO_UI_USE_CAIRO             1
 #define DISTRHO_UI_DEFAULT_WIDTH         1080
-#define DISTRHO_UI_DEFAULT_HEIGHT        798
+#define DISTRHO_UI_DEFAULT_HEIGHT        678
 // same UI as the stereo build (ui/UIPainter.hpp doesn't care about output
 // routing) - must match the height ui/UIPainter.hpp's buildLayout() actually
 // lays out to (verified via the offline PNG renderer) - keep in sync by hand.

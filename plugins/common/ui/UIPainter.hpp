@@ -124,8 +124,8 @@ inline void addColumnKnobs(std::vector<Knob>& knobs, const PanelBox& p, Color ac
 {
     const size_t n = items.size();
     const size_t rows = (n + 1) / 2;
-    const float radius = 22.0f;
-    const float rowPitch = 84.0f;
+    const float radius = 17.0f;
+    const float rowPitch = 64.0f;
     const float contentTop = p.y + kPanelHeaderH;
     const float contentBottom = p.y + p.h - 10.0f;
     const float blockH = (float)rows * rowPitch;
@@ -268,7 +268,7 @@ inline Layout buildLayout(float width, float height)
     }
 
     const float row1Y = presetBarY + presetBarH + rowGap;
-    const float row1H = 404.0f; // fits 4 knob-rows (Ride's 7 knobs, the tallest column)
+    const float row1H = 324.0f; // fits 4 knob-rows (Ride's 7 knobs, the tallest column)
     const float row2Y = row1Y + row1H + rowGap;
     const float row2H = height - row2Y - margin;
 
