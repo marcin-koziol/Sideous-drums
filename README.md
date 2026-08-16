@@ -6,14 +6,18 @@
 > conversational back-and-forth with an AI, not hand-engineered from a spec.
 > It works, it's been tested, but go in with appropriate expectations.
 
-A retro 8-bit-vibe drum synth plugin (VST3 / LV2 / CLAP / JACK standalone),
-built on [DPF](https://github.com/DISTRHO/DPF) with a hand-drawn Cairo-based
-UI — a companion to [Sideous](https://github.com/marcin-koziol/Sideous-synth),
-same visual family, warmer drum-machine-chassis palette. RD-9-style layout:
-one column per drum, each with its own knobs and accent color. Each column's
-header (name + MIDI note) is itself a trigger pad — click it to play that
-voice at full velocity, no MIDI keyboard/host transport needed to audition a
-sound while dialing it in.
+A retro analog-style drum machine plugin (VST3 / LV2 / CLAP / JACK
+standalone), built on [DPF](https://github.com/DISTRHO/DPF) with a
+hand-drawn Cairo-based UI — a companion to
+[Sideous](https://github.com/marcin-koziol/Sideous-synth), same visual
+family, warmer drum-machine-chassis palette. Modeled on classic analog
+drum machines (808/909-style FM cymbal stacks, pitch-swept kick/toms), not
+an 8-bit/chip sound — that's what
+[Sideous ChipDrums](https://github.com/marcin-koziol/Sideous-chipdrums) is
+for. RD-9-style layout: one column per drum, each with its own knobs and
+accent color. Each column's header (name + MIDI note) is itself a trigger
+pad — click it to play that voice at full velocity, no MIDI keyboard/host
+transport needed to audition a sound while dialing it in.
 
 ![screenshot](docs/screenshot.png)
 
@@ -30,7 +34,7 @@ crash=49, ride=51, rimshot=37, clap=39, maracas=70):
   top-end instead of staying capped in a dull mid-range peak
 - **Hi-hat closed/open, Crash, Ride** — share a 6-oscillator metallic FM stack
   (classic 808/909 trick) blendable against plain filtered noise via Metal
-  (1 = full buzz, 0 = the simpler "chip" alternative), plus a Tune knob that
+  (1 = full buzz, 0 = the simpler, duller filtered-noise alternative), plus a Tune knob that
   transposes the whole partial set (and Ride's Bell) by up to an octave
   either way — the same trick real analog cymbal "tune" pots use, since Tone
   only sweeps the highpass and doesn't retune anything. Closed/open hats form

@@ -5,6 +5,7 @@ build-*/
 # editor/IDE cruft
 .vscode/
 .idea/
+.claude/
 *.swp
 *~
 
